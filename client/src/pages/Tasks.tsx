@@ -41,6 +41,58 @@ function buildSubtree(flat: any[], parentId: number | null): SubtaskNode[] {
     }));
 }
 
+function AddChildInput({ taskId, parentKey, parentSubtaskId, value, onChange, onSubmit }: {
+  taskId: number;
+  parentKey: string;
+  parentSubtaskId: number | null;
+  value: string;
+  onChange: (v: string) => void;
+  onSubmit: (taskId: number, parentKey: string, parentSubtaskId: number | null) => void;
+}) {
+  const [active, setActive] = useState(false);
+
+  if (!active) {
+    return (
+      <button
+        onClick={() => setActive(true)}
+        className="text-xs text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 transition-base py-0.5"
+      >
+        + 添加子项
+      </button>
+    );
+  }
+
+  return (
+    <div className="flex gap-2 items-center fade-in">
+      <input
+        type="text"
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        onKeyDown={e => {
+          if (e.key === 'Enter') { onSubmit(taskId, parentKey, parentSubtaskId); setActive(false); }
+          if (e.key === 'Escape') { setActive(false); onChange(''); }
+        }}
+        onBlur={() => { if (!value.trim()) setActive(false); }}
+        placeholder="输入子项内容..."
+        autoFocus
+        className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-700/50"
+      />
+      <button
+        onClick={() => { onSubmit(taskId, parentKey, parentSubtaskId); setActive(false); }}
+        className="text-xs bg-blue-600 text-white px-2.5 py-1 rounded-lg hover:bg-blue-700 transition-base"
+      >
+        添加
+      </button>
+      <button
+        onClick={() => { setActive(false); onChange(''); }}
+        className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 px-1"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
 export default function Tasks() {
   const [date, setDate] = useState(todayStr());
   const [inProgress, setInProgress] = useState<any[]>([]);
@@ -203,35 +255,21 @@ export default function Tasks() {
   };
 
   const renderAddChildInput = (taskId: number, parentKey: string, parentSubtaskId: number | null) => (
-    <div className="flex gap-2">
-      <input
-        type="text"
-        value={subInputs[parentKey] || ''}
-        onChange={e => setSubInputs(prev => ({ ...prev, [parentKey]: e.target.value }))}
-        onKeyDown={e => { if (e.key === 'Enter') handleAddSubtask(taskId, parentKey, parentSubtaskId); }}
-        placeholder="添加子项..."
-        className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-      />
-      <button
-        onClick={() => handleAddSubtask(taskId, parentKey, parentSubtaskId)}
-        className="text-sm text-blue-500 dark:text-blue-400 hover:text-blue-700"
-      >
-        添加
-      </button>
-    </div>
+    <AddChildInput taskId={taskId} parentKey={parentKey} parentSubtaskId={parentSubtaskId} value={subInputs[parentKey] || ''} onChange={(v) => setSubInputs(prev => ({ ...prev, [parentKey]: v }))} onSubmit={handleAddSubtask} />
   );
 
-  const renderSubtaskNode = (taskId: number, node: SubtaskNode) => {
+  const renderSubtaskNode = (taskId: number, node: SubtaskNode, depth: number = 0) => {
     const isEditingSub = editingSub?.subId === node.id;
+    const hasChildren = node.children.length > 0;
     return (
-      <div key={node.id} className="space-y-1">
-        <div className="flex items-center justify-between group">
-          <div className="flex items-center gap-2">
+      <div key={node.id} className="relative">
+        <div className="flex items-center justify-between group py-1">
+          <div className="flex items-center gap-2 min-w-0">
             <input
               type="checkbox"
               checked={node.status === 'done'}
               onChange={() => handleToggleSubtask(taskId, node.id, node.status)}
-              className="rounded cursor-pointer"
+              className="rounded cursor-pointer shrink-0"
             />
             {isEditingSub ? (
               <input
@@ -249,28 +287,37 @@ export default function Tasks() {
             ) : (
               <span
                 onClick={() => startEditSub(taskId, node.id, node.content)}
-                className={`text-sm cursor-pointer hover:underline ${node.status === 'done' ? 'text-gray-400 dark:text-gray-500 line-through' : ''}`}
+                className={`text-sm cursor-pointer hover:underline truncate ${node.status === 'done' ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-700 dark:text-gray-300'}`}
               >
                 {node.content}
               </span>
             )}
-            <span className="text-xs text-gray-400 dark:text-gray-500">
+            <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
               {node.status === 'done' && node.done_at
-                ? `完成于 ${formatTime(node.done_at)}`
-                : `创建于 ${formatTime(node.created_at)}`}
+                ? `✓ ${formatTime(node.done_at)}`
+                : formatTime(node.created_at)}
             </span>
           </div>
           <button
             onClick={() => handleDeleteSubtask(taskId, node.id)}
-            className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100"
+            className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-base shrink-0 ml-2"
           >
             删除
           </button>
         </div>
-        <div className="ml-4 space-y-1">
-          {node.children.map(child => renderSubtaskNode(taskId, child))}
-          {renderAddChildInput(taskId, `sub:${node.id}`, node.id)}
-        </div>
+        {hasChildren && (
+          <div className="ml-3 pl-3 border-l border-gray-200 dark:border-gray-700 space-y-0.5">
+            {node.children.map(child => renderSubtaskNode(taskId, child, depth + 1))}
+            <div className="pl-1 py-0.5">
+              {renderAddChildInput(taskId, `sub:${node.id}`, node.id)}
+            </div>
+          </div>
+        )}
+        {!hasChildren && (
+          <div className="ml-6 pl-1 py-0.5">
+            {renderAddChildInput(taskId, `sub:${node.id}`, node.id)}
+          </div>
+        )}
       </div>
     );
   };
@@ -329,27 +376,35 @@ export default function Tasks() {
           </div>
         </div>
 
-        <div className="ml-4 mt-2 space-y-1">
-          {tree.map(node => renderSubtaskNode(task.id, node))}
-          {renderAddChildInput(task.id, `task:${task.id}`, null)}
-        </div>
+        {tree.length > 0 && (
+          <div className="mt-3 ml-1 pl-3 border-l-2 border-gray-200 dark:border-gray-700 space-y-0.5">
+            {tree.map(node => renderSubtaskNode(task.id, node))}
+            <div className="pl-1 py-0.5">
+              {renderAddChildInput(task.id, `task:${task.id}`, null)}
+            </div>
+          </div>
+        )}
+        {tree.length === 0 && (
+          <div className="mt-2 pl-1">
+            {renderAddChildInput(task.id, `task:${task.id}`, null)}
+          </div>
+        )}
       </div>
     );
   };
 
   const renderCompletedSubtaskNode = (node: SubtaskNode) => (
-    <div key={node.id} className="space-y-1">
-      <div className="flex items-center gap-2">
-        <span className="text-gray-300">└</span>
+    <div key={node.id} className="relative">
+      <div className="flex items-center gap-2 py-0.5">
         <span className={`text-sm ${node.status === 'done' ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-600 dark:text-gray-400'}`}>
           {node.content}
         </span>
         <span className="text-xs text-gray-400 dark:text-gray-500">
-          {node.status === 'done' && node.done_at ? `完成于 ${formatTime(node.done_at)}` : `未完成`}
+          {node.status === 'done' && node.done_at ? `✓ ${formatTime(node.done_at)}` : '未完成'}
         </span>
       </div>
       {node.children.length > 0 && (
-        <div className="ml-4 space-y-1">
+        <div className="ml-3 pl-3 border-l border-gray-200 dark:border-gray-700 space-y-0.5">
           {node.children.map(child => renderCompletedSubtaskNode(child))}
         </div>
       )}
@@ -399,7 +454,7 @@ export default function Tasks() {
           </div>
         </div>
         {tree.length > 0 && (
-          <div className="ml-4 mt-2 space-y-1 border-l border-gray-200 dark:border-gray-700 pl-3">
+          <div className="mt-3 ml-1 pl-3 border-l-2 border-gray-200 dark:border-gray-700 space-y-0.5">
             {tree.map(node => renderCompletedSubtaskNode(node))}
           </div>
         )}
