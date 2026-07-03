@@ -1,26 +1,33 @@
 import { Router } from 'express';
 import { getDb, getDbPath, initDb } from '../db/index.js';
-import { copyFileSync, mkdirSync, readdirSync, existsSync } from 'fs';
-import { dirname, join } from 'path';
+import { copyFileSync, mkdirSync, readdirSync, existsSync, unlinkSync } from 'fs';
+import { dirname, join, basename } from 'path';
 
 const router = Router();
+
+function getBackupDir(): string {
+  return join(dirname(getDbPath()), 'backups');
+}
+
+function isSafeFilename(filename: string): boolean {
+  return filename === basename(filename) && !filename.includes('..') && !filename.includes('/');
+}
 
 router.post('/', (_req, res) => {
   const db = getDb();
   db.pragma('wal_checkpoint(FULL)');
   const dbPath = getDbPath();
-  const backupDir = join(dirname(dbPath), 'backups');
+  const backupDir = getBackupDir();
   mkdirSync(backupDir, { recursive: true });
   const now = new Date().toISOString().replace(/[:.]/g, '').slice(0, 15);
   const backupName = `doer_${now}.db`;
   const backupPath = join(backupDir, backupName);
   copyFileSync(dbPath, backupPath);
-  res.json({ ok: true, path: backupPath, filename: backupName });
+  res.json({ ok: true, filename: backupName });
 });
 
 router.get('/', (_req, res) => {
-  const dbPath = getDbPath();
-  const backupDir = join(dirname(dbPath), 'backups');
+  const backupDir = getBackupDir();
   if (!existsSync(backupDir)) return res.json([]);
   const files = readdirSync(backupDir)
     .filter(f => f.endsWith('.db'))
@@ -31,11 +38,10 @@ router.get('/', (_req, res) => {
 
 router.post('/restore', (req, res) => {
   const { filename } = req.body;
-  if (!filename) return res.status(400).json({ error: 'filename is required' });
+  if (!filename || !isSafeFilename(filename)) return res.status(400).json({ error: 'invalid filename' });
 
   const dbPath = getDbPath();
-  const backupDir = join(dirname(dbPath), 'backups');
-  const backupPath = join(backupDir, filename);
+  const backupPath = join(getBackupDir(), filename);
 
   if (!existsSync(backupPath)) return res.status(404).json({ error: 'backup file not found' });
 
@@ -45,22 +51,20 @@ router.post('/restore', (req, res) => {
     copyFileSync(backupPath, dbPath);
     initDb();
     res.json({ ok: true });
-  } catch (err) {
+  } catch {
+    try { initDb(); } catch {}
     res.status(500).json({ error: 'restore failed' });
   }
 });
 
 router.delete('/', (req, res) => {
   const { filename } = req.body;
-  if (!filename) return res.status(400).json({ error: 'filename is required' });
+  if (!filename || !isSafeFilename(filename)) return res.status(400).json({ error: 'invalid filename' });
 
-  const dbPath = getDbPath();
-  const backupDir = join(dirname(dbPath), 'backups');
-  const backupPath = join(backupDir, filename);
+  const backupPath = join(getBackupDir(), filename);
 
   if (!existsSync(backupPath)) return res.status(404).json({ error: 'backup file not found' });
 
-  const { unlinkSync } = require('fs');
   unlinkSync(backupPath);
   res.json({ ok: true });
 });

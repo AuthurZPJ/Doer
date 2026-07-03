@@ -15,12 +15,15 @@ router.post('/', (req, res) => {
     const info = getDb().prepare('INSERT INTO tags (name, color) VALUES (?, ?)').run(name.trim(), color || null);
     res.status(201).json({ id: info.lastInsertRowid });
   } catch {
-    res.status(409).json({ error: '标签已存在' });
+    res.status(409).json({ error: 'tag already exists' });
   }
 });
 
 router.put('/:id', (req, res) => {
   const { name, color } = req.body;
+  const db = getDb();
+  const tag = db.prepare('SELECT * FROM tags WHERE id = ?').get(req.params.id);
+  if (!tag) return res.status(404).json({ error: 'tag not found' });
   const updates: string[] = [];
   const values: any[] = [];
   if (name !== undefined) { updates.push('name = ?'); values.push(name.trim()); }
@@ -28,10 +31,10 @@ router.put('/:id', (req, res) => {
   if (updates.length === 0) return res.status(400).json({ error: 'no fields to update' });
   values.push(req.params.id);
   try {
-    getDb().prepare(`UPDATE tags SET ${updates.join(', ')} WHERE id = ?`).run(...values);
+    db.prepare(`UPDATE tags SET ${updates.join(', ')} WHERE id = ?`).run(...values);
     res.json({ ok: true });
   } catch {
-    res.status(409).json({ error: '标签名已存在' });
+    res.status(409).json({ error: 'tag name already exists' });
   }
 });
 

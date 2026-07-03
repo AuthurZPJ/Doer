@@ -36,15 +36,6 @@ CREATE TABLE IF NOT EXISTS learnings (
   created_at TEXT NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS issues (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  content TEXT NOT NULL,
-  tags TEXT DEFAULT '',
-  status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'resolved')),
-  resolved_at TEXT,
-  created_at TEXT NOT NULL
-);
-
 CREATE TABLE IF NOT EXISTS tags (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   name TEXT NOT NULL UNIQUE,

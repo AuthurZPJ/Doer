@@ -4,11 +4,12 @@ import { showToast } from '../components/Toast';
 
 interface SearchResults {
   tasks: any[];
+  todos: any[];
   meetings: any[];
   learnings: any[];
 }
 
-const EMPTY: SearchResults = { tasks: [], meetings: [], learnings: [] };
+const EMPTY: SearchResults = { tasks: [], todos: [], meetings: [], learnings: [] };
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
@@ -36,7 +37,7 @@ export default function SearchPage() {
   };
 
   const hasResults =
-    results.tasks.length + results.meetings.length + results.learnings.length > 0;
+    results.tasks.length + results.todos.length + results.meetings.length + results.learnings.length > 0;
 
   const dateOf = (row: any, field: string) =>
     row[field] ? new Date(row[field]).toLocaleDateString() : '';
@@ -77,6 +78,17 @@ export default function SearchPage() {
                 key={t.id}
                 preview={t.content}
                 date={dateOf(t, t.completed_at ? 'completed_at' : 'created_at')}
+                tags={t.tags}
+              />
+            ))}
+          </Section>
+
+          <Section title="未来计划" count={results.todos.length}>
+            {results.todos.map((t: any) => (
+              <ResultCard
+                key={t.id}
+                preview={t.content}
+                date={dateOf(t, 'created_at')}
                 tags={t.tags}
               />
             ))}

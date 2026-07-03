@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { todayStr } from '../utils/date';
+import { todayStr, parseLocalDate } from '../utils/date';
 
 interface DatePickerProps {
   value: string;
@@ -12,13 +12,13 @@ const weekdayNames = ['一', '二', '三', '四', '五', '六', '日'];
 
 export default function DatePicker({ value, onChange, className = '' }: DatePickerProps) {
   const [open, setOpen] = useState(false);
-  const [viewYear, setViewYear] = useState(() => value ? new Date(value).getFullYear() : new Date().getFullYear());
-  const [viewMonth, setViewMonth] = useState(() => value ? new Date(value).getMonth() : new Date().getMonth());
+  const [viewYear, setViewYear] = useState(() => value ? parseLocalDate(value).getFullYear() : new Date().getFullYear());
+  const [viewMonth, setViewMonth] = useState(() => value ? parseLocalDate(value).getMonth() : new Date().getMonth());
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (value) {
-      const d = new Date(value);
+      const d = parseLocalDate(value);
       setViewYear(d.getFullYear());
       setViewMonth(d.getMonth());
     }

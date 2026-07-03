@@ -1,11 +1,11 @@
 import { Router } from 'express';
 import { getDb } from '../db/index.js';
-import { todayStr, toDateStr } from '../utils/date.js';
+import { todayStr, toDateStr, parseLocalDate } from '../utils/date.js';
 
 const router = Router();
 
 function getWeekStart(date: string): string {
-  const d = new Date(date);
+  const d = parseLocalDate(date);
   const day = d.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
@@ -13,7 +13,7 @@ function getWeekStart(date: string): string {
 }
 
 function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr);
+  const d = parseLocalDate(dateStr);
   d.setDate(d.getDate() + days);
   return toDateStr(d);
 }

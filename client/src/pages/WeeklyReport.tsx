@@ -3,10 +3,10 @@ import { weeklyReportApi } from '../api';
 import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
 import DatePicker from '../components/DatePicker';
-import { todayStr, toDateStr } from '../utils/date';
+import { todayStr, toDateStr, parseLocalDate } from '../utils/date';
 
 function getWeekStart(date: string): string {
-  const d = new Date(date);
+  const d = parseLocalDate(date);
   const day = d.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
@@ -14,7 +14,7 @@ function getWeekStart(date: string): string {
 }
 
 function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr);
+  const d = parseLocalDate(dateStr);
   d.setDate(d.getDate() + days);
   return toDateStr(d);
 }
@@ -91,7 +91,7 @@ function reportToMarkdown(r: any, start: string, end: string): string {
   md += `## 每日完成\n\n`;
   for (const day of r.days) {
     if (!hasDayContent(day)) continue;
-    const weekday = weekdayNames[new Date(day.date).getDay() === 0 ? 6 : new Date(day.date).getDay() - 1];
+    const weekday = weekdayNames[parseLocalDate(day.date).getDay() === 0 ? 6 : parseLocalDate(day.date).getDay() - 1];
     md += `### ${day.date} ${weekday}\n`;
     for (const task of day.tasks) {
       const countStr = task.total_subtasks > 0 ? ` (${task.done_subtasks}/${task.total_subtasks})` : '';
@@ -279,7 +279,7 @@ export default function WeeklyReport() {
           <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 tracking-wide mb-2">每日完成</h2>
           <div className="space-y-3 mb-6 slide-up">
             {allDays.map((day: any) => {
-              const weekday = weekdayNames[new Date(day.date).getDay() === 0 ? 6 : new Date(day.date).getDay() - 1];
+              const weekday = weekdayNames[parseLocalDate(day.date).getDay() === 0 ? 6 : parseLocalDate(day.date).getDay() - 1];
               const dayCount = day.tasks.length + (day.standalone_groups?.length || 0);
               return (
                 <div key={day.date} className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 transition-base">

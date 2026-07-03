@@ -5,13 +5,17 @@ const router = Router();
 
 router.get('/', (req, res) => {
   const q = (req.query.q as string || '').trim();
-  if (!q) return res.json({ tasks: [], meetings: [], learnings: [] });
+  if (!q) return res.json({ tasks: [], todos: [], meetings: [], learnings: [] });
 
   const db = getDb();
   const pattern = `%${q}%`;
 
   const tasks = db.prepare(
     "SELECT * FROM tasks WHERE content LIKE ? OR tags LIKE ? ORDER BY created_at DESC LIMIT 20"
+  ).all(pattern, pattern);
+
+  const todos = db.prepare(
+    "SELECT * FROM todos WHERE content LIKE ? OR tags LIKE ? ORDER BY created_at DESC LIMIT 20"
   ).all(pattern, pattern);
 
   const meetings = db.prepare(
@@ -22,7 +26,7 @@ router.get('/', (req, res) => {
     "SELECT * FROM learnings WHERE title LIKE ? OR content LIKE ? OR tags LIKE ? ORDER BY created_at DESC LIMIT 20"
   ).all(pattern, pattern, pattern);
 
-  res.json({ tasks, meetings, learnings });
+  res.json({ tasks, todos, meetings, learnings });
 });
 
 export default router;
