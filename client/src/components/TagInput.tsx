@@ -12,9 +12,11 @@ export default function TagInput({ value, onChange }: TagInputProps) {
   const [showSuggestions, setShowSuggestions] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+  const fetchTags = () => {
     tagsApi.list().then((data: any[]) => setTags(data.map(t => t.name)));
-  }, []);
+  };
+
+  useEffect(() => { fetchTags(); }, []);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -63,7 +65,7 @@ export default function TagInput({ value, onChange }: TagInputProps) {
               removeTag(currentTags[currentTags.length - 1]);
             }
           }}
-          onFocus={() => setShowSuggestions(true)}
+          onFocus={() => { fetchTags(); setShowSuggestions(true); }}
           placeholder={currentTags.length === 0 ? '输入标签' : ''}
           className="flex-1 min-w-[60px] outline-none text-sm"
         />
