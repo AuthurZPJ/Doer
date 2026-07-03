@@ -18,6 +18,11 @@ export default function Meetings() {
   const [content, setContent] = useState('');
   const [tags, setTags] = useState('');
   const [meetingDate, setMeetingDate] = useState(todayStr());
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editTitle, setEditTitle] = useState('');
+  const [editContent, setEditContent] = useState('');
+  const [editTags, setEditTags] = useState('');
+  const [editDate, setEditDate] = useState(todayStr());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -60,6 +65,36 @@ export default function Meetings() {
       load();
     } catch {
       showToast('删除失败', 'error');
+    }
+  };
+
+  const startEdit = () => {
+    if (!selected) return;
+    setEditingId(selected.id);
+    setEditTitle(selected.title || '');
+    setEditContent(selected.content || '');
+    setEditTags(selected.tags || '');
+    setEditDate(selected.meeting_date || todayStr());
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId || !editTitle.trim()) return;
+    try {
+      await meetingsApi.update(editingId, {
+        title: editTitle.trim(),
+        content: editContent,
+        tags: editTags,
+        meeting_date: editDate,
+      });
+      setEditingId(null);
+      showToast('保存成功');
+      load();
+    } catch {
+      showToast('保存失败', 'error');
     }
   };
 
@@ -122,7 +157,7 @@ export default function Meetings() {
               {meetings.map(m => (
                 <button
                   key={m.id}
-                  onClick={() => setSelectedId(m.id)}
+                  onClick={() => { setSelectedId(m.id); setEditingId(null); }}
                   className={`block w-full text-left p-3 hover:bg-gray-50 ${selectedId === m.id ? 'bg-blue-50' : ''}`}
                 >
                   <p className="text-sm font-medium truncate">{m.title}</p>
@@ -133,17 +168,69 @@ export default function Meetings() {
           </div>
           <div className="flex-1">
             {selected ? (
-              <div className="bg-white rounded-lg shadow p-6">
-                <div className="flex items-start justify-between mb-4">
-                  <div>
-                    <h2 className="text-lg font-semibold">{selected.title}</h2>
-                    <p className="text-sm text-gray-400 mt-1">{selected.meeting_date}</p>
-                    {selected.tags && <span className="text-xs text-blue-500">{selected.tags}</span>}
+              editingId === selected.id ? (
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex flex-col gap-3">
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={e => setEditTitle(e.target.value)}
+                      placeholder="会议标题"
+                      className="border border-gray-300 rounded px-3 py-2 text-sm"
+                    />
+                    <textarea
+                      value={editContent}
+                      onChange={e => setEditContent(e.target.value)}
+                      placeholder="会议内容"
+                      rows={6}
+                      className="border border-gray-300 rounded px-3 py-2 text-sm"
+                    />
+                    <div className="flex gap-3 items-center">
+                      <input
+                        type="date"
+                        value={editDate}
+                        onChange={e => setEditDate(e.target.value)}
+                        className="border border-gray-300 rounded px-2 py-1 text-sm"
+                      />
+                      <div className="flex-1"><TagInput value={editTags} onChange={setEditTags} /></div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveEdit}
+                        className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
+                      >
+                        保存
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="border border-gray-300 px-4 py-2 rounded text-sm hover:bg-gray-50"
+                      >
+                        取消
+                      </button>
+                    </div>
                   </div>
-                  <ConfirmButton onConfirm={() => handleDelete(selected.id)} />
                 </div>
-                <div className="text-sm whitespace-pre-wrap">{selected.content || '（无内容）'}</div>
-              </div>
+              ) : (
+                <div className="bg-white rounded-lg shadow p-6">
+                  <div className="flex items-start justify-between mb-4">
+                    <div>
+                      <h2 className="text-lg font-semibold">{selected.title}</h2>
+                      <p className="text-sm text-gray-400 mt-1">{selected.meeting_date}</p>
+                      {selected.tags && <span className="text-xs text-blue-500">{selected.tags}</span>}
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={startEdit}
+                        className="text-sm text-blue-600 hover:text-blue-800"
+                      >
+                        编辑
+                      </button>
+                      <ConfirmButton onConfirm={() => handleDelete(selected.id)} />
+                    </div>
+                  </div>
+                  <div className="text-sm whitespace-pre-wrap">{selected.content || '（无内容）'}</div>
+                </div>
+              )
             ) : (
               <EmptyState message="选择左侧会议查看详情" />
             )}

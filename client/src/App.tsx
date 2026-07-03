@@ -7,6 +7,9 @@ import Meetings from './pages/Meetings';
 import Learnings from './pages/Learnings';
 import Issues from './pages/Issues';
 import WeeklyReport from './pages/WeeklyReport';
+import SearchPage from './pages/SearchPage';
+import MonthlyStats from './pages/MonthlyStats';
+import TagsPage from './pages/TagsPage';
 import { ToastContainer } from './components/Toast';
 
 export default function App() {
@@ -21,6 +24,9 @@ export default function App() {
           <Route path="/learnings" element={<Learnings />} />
           <Route path="/issues" element={<Issues />} />
           <Route path="/weekly-report" element={<WeeklyReport />} />
+          <Route path="/search" element={<SearchPage />} />
+          <Route path="/monthly-stats" element={<MonthlyStats />} />
+          <Route path="/tags" element={<TagsPage />} />
         </Route>
       </Routes>
       <ToastContainer />

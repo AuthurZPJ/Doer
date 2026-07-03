@@ -1,0 +1,163 @@
+import { useState, useEffect, useCallback } from 'react';
+import { tagsApi } from '../api';
+import { showToast } from '../components/Toast';
+import EmptyState from '../components/EmptyState';
+import ConfirmButton from '../components/ConfirmButton';
+
+const presetColors = [
+  '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
+  '#8b5cf6', '#ec4899', '#14b8a6', '#f97316',
+];
+
+export default function TagsPage() {
+  const [tags, setTags] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newName, setNewName] = useState('');
+  const [newColor, setNewColor] = useState(presetColors[0]);
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editName, setEditName] = useState('');
+  const [editColor, setEditColor] = useState('');
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await tagsApi.list();
+      setTags(result);
+    } catch {
+      showToast('加载失败', 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const handleAdd = async () => {
+    if (!newName.trim()) return;
+    try {
+      await tagsApi.create({ name: newName.trim(), color: newColor });
+      setNewName('');
+      setNewColor(presetColors[0]);
+      showToast('添加成功');
+      load();
+    } catch {
+      showToast('标签已存在', 'error');
+    }
+  };
+
+  const handleEdit = (tag: any) => {
+    setEditingId(tag.id);
+    setEditName(tag.name);
+    setEditColor(tag.color || presetColors[0]);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId || !editName.trim()) return;
+    try {
+      await tagsApi.update(editingId, { name: editName.trim(), color: editColor });
+      setEditingId(null);
+      showToast('保存成功');
+      load();
+    } catch {
+      showToast('标签名已存在', 'error');
+    }
+  };
+
+  const handleDelete = async (id: number) => {
+    try {
+      await tagsApi.delete(id);
+      showToast('删除成功');
+      load();
+    } catch {
+      showToast('删除失败', 'error');
+    }
+  };
+
+  return (
+    <div className="p-6 max-w-3xl">
+      <h1 className="text-2xl font-bold mb-6">标签管理</h1>
+
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="flex flex-col gap-3">
+          <div className="flex gap-3 items-center">
+            <input
+              type="text"
+              value={newName}
+              onChange={e => setNewName(e.target.value)}
+              onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
+              placeholder="标签名称"
+              className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm"
+            />
+            <div className="flex gap-1">
+              {presetColors.map(color => (
+                <button
+                  key={color}
+                  onClick={() => setNewColor(color)}
+                  className={`w-6 h-6 rounded-full border-2 ${newColor === color ? 'border-gray-800' : 'border-transparent'}`}
+                  style={{ backgroundColor: color }}
+                />
+              ))}
+            </div>
+          </div>
+          <button
+            onClick={handleAdd}
+            className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 self-start"
+          >
+            添加标签
+          </button>
+        </div>
+      </div>
+
+      {loading ? (
+        <div className="text-gray-400">加载中...</div>
+      ) : tags.length === 0 ? (
+        <EmptyState message="还没有标签，创建一个吧" />
+      ) : (
+        <div className="bg-white rounded-lg shadow divide-y divide-gray-100">
+          {tags.map(tag => (
+            <div key={tag.id} className="p-4 flex items-center justify-between">
+              {editingId === tag.id ? (
+                <div className="flex items-center gap-3 flex-1">
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={e => setEditName(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); }
+                    }
+                    className="border border-gray-300 rounded px-2 py-1 text-sm flex-1"
+                  />
+                  <div className="flex gap-1">
+                    {presetColors.map(color => (
+                      <button
+                        key={color}
+                        onClick={() => setEditColor(color)}
+                        className={`w-5 h-5 rounded-full border-2 ${editColor === color ? 'border-gray-800' : 'border-transparent'}`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                  <button onClick={handleSaveEdit} className="text-sm text-blue-600 hover:text-blue-800">保存</button>
+                  <button onClick={() => setEditingId(null)} className="text-sm text-gray-500 hover:text-gray-700">取消</button>
+                </div>
+              ) : (
+                <>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: tag.color || '#cbd5e1' }}
+                    />
+                    <span className="text-sm">{tag.name}</span>
+                  </div>
+                  <div className="flex gap-3">
+                    <button onClick={() => handleEdit(tag)} className="text-sm text-gray-500 hover:text-gray-700">编辑</button>
+                    <ConfirmButton onConfirm={() => handleDelete(tag.id)} />
+                  </div>
+                </>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}

@@ -21,11 +21,11 @@ export function initDb(): Database.Database {
 }
 
 function migrate(db: Database.Database): void {
-  const columns = db.prepare("PRAGMA table_info(tasks)").all() as any[];
-  if (columns.length === 0) return;
+  const taskCols = db.prepare("PRAGMA table_info(tasks)").all() as any[];
+  if (taskCols.length === 0) return;
 
-  const hasStatus = columns.some(c => c.name === 'status');
-  const completedAtCol = columns.find(c => c.name === 'completed_at');
+  const hasStatus = taskCols.some(c => c.name === 'status');
+  const completedAtCol = taskCols.find(c => c.name === 'completed_at');
 
   if (!hasStatus || (completedAtCol && completedAtCol.notnull === 1)) {
     db.exec(`
@@ -46,6 +46,16 @@ function migrate(db: Database.Database): void {
       DROP TABLE tasks;
       ALTER TABLE tasks_new RENAME TO tasks;
     `);
+  }
+
+  const subtaskCols = db.prepare("PRAGMA table_info(subtasks)").all() as any[];
+  if (subtaskCols.length > 0 && !subtaskCols.some(c => c.name === 'sort_order')) {
+    db.exec("ALTER TABLE subtasks ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0");
+  }
+
+  const issueCols = db.prepare("PRAGMA table_info(issues)").all() as any[];
+  if (issueCols.length > 0 && !issueCols.some(c => c.name === 'task_id')) {
+    db.exec("ALTER TABLE issues ADD COLUMN task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL");
   }
 }
 

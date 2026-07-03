@@ -137,4 +137,23 @@ describe('tags table', () => {
     const tags = db.prepare('SELECT * FROM tags').all();
     expect(tags).toHaveLength(0);
   });
+
+  it('should update tag name and color', () => {
+    const info = db.prepare('INSERT INTO tags (name, color) VALUES (?, ?)').run('前端', '#3b82f6');
+    db.prepare('UPDATE tags SET name = ?, color = ? WHERE id = ?').run('前端开发', '#ef4444', info.lastInsertRowid);
+    const tag = db.prepare('SELECT * FROM tags WHERE id = ?').get(info.lastInsertRowid) as any;
+    expect(tag.name).toBe('前端开发');
+    expect(tag.color).toBe('#ef4444');
+  });
+
+  it('should delete a tag without affecting task records', () => {
+    db.prepare('INSERT INTO tags (name) VALUES (?)').run('前端');
+    const tagId = (db.prepare('SELECT * FROM tags WHERE name = ?').get('前端') as any).id;
+    db.prepare('INSERT INTO tasks (content, tags, status, completed_at, created_at) VALUES (?, ?, ?, ?, ?)')
+      .run('任务', '前端', 'in_progress', null, new Date().toISOString());
+    db.prepare('DELETE FROM tags WHERE id = ?').run(tagId);
+    expect(db.prepare('SELECT * FROM tags WHERE id = ?').get(tagId)).toBeUndefined();
+    const task = db.prepare('SELECT * FROM tasks WHERE content = ?').get('任务') as any;
+    expect(task.tags).toBe('前端');
+  });
 });

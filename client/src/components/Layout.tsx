@@ -10,6 +10,9 @@ const navItems = [
   { path: '/learnings', label: '学习知识点' },
   { path: '/issues', label: '当前问题' },
   { path: '/weekly-report', label: '周报' },
+  { path: '/search', label: '全局搜索' },
+  { path: '/monthly-stats', label: '月度统计' },
+  { path: '/tags', label: '标签管理' },
 ];
 
 export default function Layout() {

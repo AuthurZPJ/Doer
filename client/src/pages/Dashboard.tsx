@@ -128,6 +128,9 @@ export default function Dashboard() {
             <div key={t.id} className="text-sm py-1 border-b border-gray-100 last:border-0">
               {t.content}
               {t.tags && <span className="ml-2 text-xs text-blue-500">{t.tags}</span>}
+              {t.subtask_total > 0 && (
+                <span className="ml-2 text-xs text-gray-400">{t.subtask_done}/{t.subtask_total}</span>
+              )}
             </div>
           ))}
         </Card>

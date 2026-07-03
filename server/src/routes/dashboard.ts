@@ -12,7 +12,22 @@ router.get('/', (req, res) => {
   const db = getDb();
   const inProgressTasks = db.prepare(
     "SELECT * FROM tasks WHERE status = 'in_progress' ORDER BY created_at ASC"
-  ).all();
+  ).all() as any[];
+  const subtaskMap = new Map<number, any>();
+  if (inProgressTasks.length > 0) {
+    const subtaskCounts = db.prepare(
+      `SELECT task_id,
+         COUNT(*) as subtask_total,
+         SUM(CASE WHEN status = 'done' THEN 1 ELSE 0 END) as subtask_done
+       FROM subtasks WHERE task_id IN (${inProgressTasks.map(() => '?').join(',')})
+       GROUP BY task_id`
+    ).all(inProgressTasks.map(t => t.id)) as any[];
+    subtaskCounts.forEach(s => subtaskMap.set(s.task_id, s));
+  }
+  const inProgressTasksWithSubs = inProgressTasks.map(t => {
+    const sc = subtaskMap.get(t.id);
+    return { ...t, subtask_total: sc ? sc.subtask_total : 0, subtask_done: sc ? sc.subtask_done : 0 };
+  });
   const completedTasks = db.prepare(
     "SELECT * FROM tasks WHERE status = 'completed' AND completed_at = ? ORDER BY created_at DESC"
   ).all(date);
@@ -30,7 +45,7 @@ router.get('/', (req, res) => {
   const issues = db.prepare(
     `SELECT * FROM issues WHERE status = 'open' ORDER BY created_at DESC`
   ).all();
-  res.json({ inProgressTasks, completedTasks, meetings, todos, learnings, issues });
+  res.json({ inProgressTasks: inProgressTasksWithSubs, completedTasks, meetings, todos, learnings, issues });
 });
 
 export default router;

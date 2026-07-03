@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { issuesApi } from '../api';
+import { issuesApi, tasksApi } from '../api';
 import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
 import TagInput from '../components/TagInput';
@@ -8,20 +8,26 @@ import ConfirmButton from '../components/ConfirmButton';
 export default function Issues() {
   const [openIssues, setOpenIssues] = useState<any[]>([]);
   const [resolvedIssues, setResolvedIssues] = useState<any[]>([]);
+  const [tasks, setTasks] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showResolved, setShowResolved] = useState(false);
   const [content, setContent] = useState('');
   const [tags, setTags] = useState('');
+  const [taskId, setTaskId] = useState<number | ''>('');
+
+  const taskMap = new Map<number, any>(tasks.map(t => [t.id, t]));
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const [open, resolved] = await Promise.all([
+      const [open, resolved, inProgress] = await Promise.all([
         issuesApi.list('open'),
         issuesApi.list('resolved'),
+        tasksApi.list({ status: 'in_progress' }),
       ]);
       setOpenIssues(open);
       setResolvedIssues(resolved);
+      setTasks(inProgress);
     } catch {
       showToast('加载失败', 'error');
     } finally {
@@ -34,9 +40,10 @@ export default function Issues() {
   const handleAdd = async () => {
     if (!content.trim()) return;
     try {
-      await issuesApi.create({ content: content.trim(), tags });
+      await issuesApi.create({ content: content.trim(), tags, task_id: taskId || null });
       setContent('');
       setTags('');
+      setTaskId('');
       showToast('添加成功');
       load();
     } catch {
@@ -64,28 +71,60 @@ export default function Issues() {
     }
   };
 
-  const renderIssue = (issue: any, isResolved: boolean) => (
-    <div key={issue.id} className="bg-white rounded-lg shadow p-4 flex items-start justify-between">
-      <div>
-        <p className={`text-sm ${isResolved ? 'text-gray-400 line-through' : ''}`}>{issue.content}</p>
-        <div className="flex gap-3 mt-1 text-xs text-gray-400">
-          {issue.tags && <span className="text-blue-500">{issue.tags}</span>}
-          <span>{new Date(issue.created_at).toLocaleDateString()}</span>
+  const handleChangeTask = async (id: number, newTaskId: number | '') => {
+    try {
+      await issuesApi.update(id, { task_id: newTaskId || null });
+      showToast('关联任务已更新');
+      load();
+    } catch {
+      showToast('操作失败', 'error');
+    }
+  };
+
+  const renderTaskSelect = (issue: any) => (
+    <select
+      value={issue.task_id ?? ''}
+      onChange={e => handleChangeTask(issue.id, e.target.value === '' ? '' : Number(e.target.value))}
+      className="text-xs border border-gray-300 rounded px-1 py-0.5 text-gray-600"
+    >
+      <option value="">关联任务</option>
+      {tasks.map(t => (
+        <option key={t.id} value={t.id}>{t.content}</option>
+      ))}
+    </select>
+  );
+
+  const renderIssue = (issue: any, isResolved: boolean) => {
+    const linkedTask = issue.task_id ? taskMap.get(issue.task_id) : null;
+    return (
+      <div key={issue.id} className="bg-white rounded-lg shadow p-4 flex items-start justify-between">
+        <div className="min-w-0">
+          <p className={`text-sm ${isResolved ? 'text-gray-400 line-through' : ''}`}>{issue.content}</p>
+          {issue.task_id && (
+            <p className="text-xs text-gray-500 mt-1">
+              关联任务: {linkedTask ? linkedTask.content : `任务#${issue.task_id}`}
+            </p>
+          )}
+          <div className="flex gap-3 mt-1 text-xs text-gray-400">
+            {issue.tags && <span className="text-blue-500">{issue.tags}</span>}
+            <span>{new Date(issue.created_at).toLocaleDateString()}</span>
+          </div>
+        </div>
+        <div className="flex gap-3 shrink-0 items-center">
+          {!isResolved && renderTaskSelect(issue)}
+          {!isResolved && (
+            <button
+              onClick={() => handleResolve(issue.id)}
+              className="text-sm text-green-600 hover:text-green-800"
+            >
+              解决
+            </button>
+          )}
+          <ConfirmButton onConfirm={() => handleDelete(issue.id)} />
         </div>
       </div>
-      <div className="flex gap-3 shrink-0">
-        {!isResolved && (
-          <button
-            onClick={() => handleResolve(issue.id)}
-            className="text-sm text-green-600 hover:text-green-800"
-          >
-            解决
-          </button>
-        )}
-        <ConfirmButton onConfirm={() => handleDelete(issue.id)} />
-      </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="p-6 max-w-3xl">
@@ -102,6 +141,16 @@ export default function Issues() {
             className="border border-gray-300 rounded px-3 py-2 text-sm"
           />
           <TagInput value={tags} onChange={setTags} />
+          <select
+            value={taskId}
+            onChange={e => setTaskId(e.target.value === '' ? '' : Number(e.target.value))}
+            className="border border-gray-300 rounded px-3 py-2 text-sm text-gray-600"
+          >
+            <option value="">不关联任务</option>
+            {tasks.map(t => (
+              <option key={t.id} value={t.id}>{t.content}</option>
+            ))}
+          </select>
           <button
             onClick={handleAdd}
             className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 self-start"

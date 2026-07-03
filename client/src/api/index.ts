@@ -32,7 +32,7 @@ export const learningsApi = {
 
 export const issuesApi = {
   list: (status?: string) => api.get('/issues', { params: { status } }).then(r => r.data),
-  create: (data: { content: string; tags?: string }) => api.post('/issues', data).then(r => r.data),
+  create: (data: { content: string; tags?: string; task_id?: number | null }) => api.post('/issues', data).then(r => r.data),
   update: (id: number, data: Record<string, any>) => api.put(`/issues/${id}`, data).then(r => r.data),
   delete: (id: number) => api.delete(`/issues/${id}`).then(r => r.data),
 };
@@ -47,6 +47,9 @@ export const weeklyReportApi = {
 
 export const tagsApi = {
   list: () => api.get('/tags').then(r => r.data),
+  create: (data: { name: string; color?: string }) => api.post('/tags', data).then(r => r.data),
+  update: (id: number, data: { name?: string; color?: string }) => api.put(`/tags/${id}`, data).then(r => r.data),
+  delete: (id: number) => api.delete(`/tags/${id}`).then(r => r.data),
 };
 
 export const backupApi = {
@@ -56,8 +59,16 @@ export const backupApi = {
 export const subtasksApi = {
   list: (taskId: number) => api.get(`/tasks/${taskId}/subtasks`).then(r => r.data),
   create: (taskId: number, content: string) => api.post(`/tasks/${taskId}/subtasks`, { content }).then(r => r.data),
-  update: (taskId: number, id: number, data: { content?: string; status?: string }) => api.put(`/tasks/${taskId}/subtasks/${id}`, data).then(r => r.data),
+  update: (taskId: number, id: number, data: { content?: string; status?: string; sort_order?: number }) => api.put(`/tasks/${taskId}/subtasks/${id}`, data).then(r => r.data),
   delete: (taskId: number, id: number) => api.delete(`/tasks/${taskId}/subtasks/${id}`).then(r => r.data),
+};
+
+export const searchApi = {
+  search: (q: string) => api.get('/search', { params: { q } }).then(r => r.data),
+};
+
+export const monthlyStatsApi = {
+  get: (month?: string) => api.get('/monthly-stats', { params: { month } }).then(r => r.data),
 };
 
 export default api;

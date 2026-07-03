@@ -1,19 +1,24 @@
 import { useState, useEffect, useRef } from 'react';
 import { tagsApi } from '../api';
 
+interface TagInfo {
+  name: string;
+  color: string | null;
+}
+
 interface TagInputProps {
   value: string;
   onChange: (value: string) => void;
 }
 
 export default function TagInput({ value, onChange }: TagInputProps) {
-  const [tags, setTags] = useState<string[]>([]);
+  const [tags, setTags] = useState<TagInfo[]>([]);
   const [input, setInput] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   const fetchTags = () => {
-    tagsApi.list().then((data: any[]) => setTags(data.map(t => t.name)));
+    tagsApi.list().then((data: any[]) => setTags(data.map(t => ({ name: t.name, color: t.color }))));
   };
 
   useEffect(() => { fetchTags(); }, []);
@@ -29,9 +34,12 @@ export default function TagInput({ value, onChange }: TagInputProps) {
   }, []);
 
   const currentTags = value ? value.split(',').map(t => t.trim()).filter(Boolean) : [];
-  const suggestions = tags.filter(t => 
-    t.toLowerCase().includes(input.toLowerCase()) && !currentTags.includes(t)
+  const tagColorMap = new Map(tags.map(t => [t.name, t.color]));
+  const suggestions = tags.filter(t =>
+    t.name.toLowerCase().includes(input.toLowerCase()) && !currentTags.includes(t.name)
   );
+
+  const getTagColor = (name: string): string => tagColorMap.get(name) || '#3b82f6';
 
   const addTag = (tag: string) => {
     const trimmed = tag.trim();
@@ -48,9 +56,13 @@ export default function TagInput({ value, onChange }: TagInputProps) {
     <div ref={ref} className="relative">
       <div className="flex flex-wrap gap-1 items-center min-h-[2.5rem] border border-gray-300 rounded px-2 py-1">
         {currentTags.map(tag => (
-          <span key={tag} className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded flex items-center gap-1">
+          <span
+            key={tag}
+            className="text-xs px-2 py-0.5 rounded flex items-center gap-1 text-white"
+            style={{ backgroundColor: getTagColor(tag) }}
+          >
             {tag}
-            <button type="button" onClick={() => removeTag(tag)} className="text-blue-500 hover:text-blue-700">&times;</button>
+            <button type="button" onClick={() => removeTag(tag)} className="opacity-70 hover:opacity-100">&times;</button>
           </span>
         ))}
         <input
@@ -74,12 +86,13 @@ export default function TagInput({ value, onChange }: TagInputProps) {
         <div className="absolute z-10 mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-40 overflow-auto w-full">
           {suggestions.slice(0, 10).map(tag => (
             <button
-              key={tag}
+              key={tag.name}
               type="button"
-              onClick={() => addTag(tag)}
-              className="block w-full text-left px-3 py-1.5 hover:bg-gray-100 text-sm"
+              onClick={() => addTag(tag.name)}
+              className="flex items-center gap-2 w-full text-left px-3 py-1.5 hover:bg-gray-100 text-sm"
             >
-              {tag}
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: tag.color || '#cbd5e1' }} />
+              {tag.name}
             </button>
           ))}
         </div>

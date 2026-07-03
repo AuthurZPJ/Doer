@@ -26,6 +26,9 @@ export default function Tasks() {
   const [expandedTaskId, setExpandedTaskId] = useState<number | null>(null);
   const [subtaskInputs, setSubtaskInputs] = useState<Record<number, string>>({});
   const [subtaskMap, setSubtaskMap] = useState<Record<number, any[]>>({});
+  const [editingSub, setEditingSub] = useState<{ taskId: number; subId: number } | null>(null);
+  const [editSubContent, setEditSubContent] = useState('');
+  const [draggedSub, setDraggedSub] = useState<{ taskId: number; subId: number } | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -71,6 +74,16 @@ export default function Tasks() {
     try {
       await tasksApi.update(id, { status: 'completed' });
       showToast('已完成');
+      load();
+    } catch {
+      showToast('操作失败', 'error');
+    }
+  };
+
+  const handleReopen = async (id: number) => {
+    try {
+      await tasksApi.update(id, { status: 'in_progress' });
+      showToast('已重新打开');
       load();
     } catch {
       showToast('操作失败', 'error');
@@ -138,6 +151,68 @@ export default function Tasks() {
     }
   };
 
+  const handleEditSubtask = (taskId: number, subId: number, content: string) => {
+    setEditingSub({ taskId, subId });
+    setEditSubContent(content);
+  };
+
+  const handleSaveSubtaskEdit = async () => {
+    if (!editingSub) return;
+    const { taskId, subId } = editingSub;
+    const val = editSubContent.trim();
+    if (!val) return;
+    try {
+      await subtasksApi.update(taskId, subId, { content: val });
+      setEditingSub(null);
+      const subs = await subtasksApi.list(taskId);
+      setSubtaskMap(prev => ({ ...prev, [taskId]: subs }));
+      showToast('保存成功');
+    } catch {
+      showToast('保存失败', 'error');
+    }
+  };
+
+  const handleCancelSubtaskEdit = () => {
+    setEditingSub(null);
+  };
+
+  const handleSubtaskDragStart = (taskId: number, subId: number) => {
+    setDraggedSub({ taskId, subId });
+  };
+
+  const handleSubtaskDrop = async (taskId: number, targetSubId: number) => {
+    if (!draggedSub || draggedSub.taskId !== taskId) return;
+    const draggedId = draggedSub.subId;
+    setDraggedSub(null);
+    if (draggedId === targetSubId) return;
+
+    const subs = [...(subtaskMap[taskId] || [])];
+    const fromIndex = subs.findIndex(s => s.id === draggedId);
+    const toIndex = subs.findIndex(s => s.id === targetSubId);
+    if (fromIndex === -1 || toIndex === -1) return;
+
+    const [moved] = subs.splice(fromIndex, 1);
+    subs.splice(toIndex, 0, moved);
+
+    const updates: { id: number; sortOrder: number }[] = [];
+    const reordered = subs.map((s, idx) => {
+      if (s.sort_order !== idx) {
+        updates.push({ id: s.id, sortOrder: idx });
+      }
+      return { ...s, sort_order: idx };
+    });
+
+    setSubtaskMap(prev => ({ ...prev, [taskId]: reordered }));
+
+    try {
+      await Promise.all(
+        updates.map(u => subtasksApi.update(taskId, u.id, { sort_order: u.sortOrder }))
+      );
+    } catch {
+      showToast('排序保存失败', 'error');
+    }
+  };
+
   const renderInProgressTask = (task: any) => {
     const subs = subtaskMap[task.id] || [];
     const doneCount = subs.filter((s: any) => s.status === 'done').length;
@@ -198,32 +273,81 @@ export default function Tasks() {
 
         {isExpanded && subs.length > 0 && (
           <div className="mt-3 ml-6 space-y-1">
-            {subs.map((sub: any) => (
-              <div key={sub.id} className="flex items-center justify-between group">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={sub.status === 'done'}
-                    onChange={() => handleToggleSubtask(task.id, sub.id, sub.status)}
-                    className="rounded"
-                  />
-                  <span className={`text-sm ${sub.status === 'done' ? 'text-gray-400 line-through' : ''}`}>
-                    {sub.content}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {sub.status === 'done' && sub.done_at
-                      ? `完成于 ${formatTime(sub.done_at)}`
-                      : `创建于 ${formatTime(sub.created_at)}`}
-                  </span>
-                </div>
-                <button
-                  onClick={() => handleDeleteSubtask(task.id, sub.id)}
-                  className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100"
+            {subs.map((sub: any) => {
+              const isEditingSub = editingSub?.subId === sub.id;
+              const isDragging = draggedSub?.subId === sub.id;
+
+              if (isEditingSub) {
+                return (
+                  <div key={sub.id} className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={editSubContent}
+                      onChange={e => setEditSubContent(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') handleSaveSubtaskEdit();
+                        if (e.key === 'Escape') handleCancelSubtaskEdit();
+                      }}
+                      autoFocus
+                      className="flex-1 border border-gray-300 rounded px-2 py-1 text-sm"
+                    />
+                    <button onClick={handleSaveSubtaskEdit} className="text-xs text-blue-600 hover:text-blue-800">保存</button>
+                    <button onClick={handleCancelSubtaskEdit} className="text-xs text-gray-500 hover:text-gray-700">取消</button>
+                  </div>
+                );
+              }
+
+              return (
+                <div
+                  key={sub.id}
+                  draggable
+                  onDragStart={e => {
+                    e.dataTransfer.effectAllowed = 'move';
+                    e.dataTransfer.setData('text/plain', String(sub.id));
+                    handleSubtaskDragStart(task.id, sub.id);
+                  }}
+                  onDragOver={e => e.preventDefault()}
+                  onDrop={e => {
+                    e.preventDefault();
+                    handleSubtaskDrop(task.id, sub.id);
+                  }}
+                  onDragEnd={() => setDraggedSub(null)}
+                  className={`flex items-center justify-between group ${isDragging ? 'opacity-40' : ''}`}
                 >
-                  删除
-                </button>
-              </div>
-            ))}
+                  <div className="flex items-center gap-2">
+                    <span className="cursor-grab text-gray-300 hover:text-gray-500 select-none">⠿</span>
+                    <input
+                      type="checkbox"
+                      checked={sub.status === 'done'}
+                      onChange={() => handleToggleSubtask(task.id, sub.id, sub.status)}
+                      className="rounded"
+                    />
+                    <span className={`text-sm ${sub.status === 'done' ? 'text-gray-400 line-through' : ''}`}>
+                      {sub.content}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {sub.status === 'done' && sub.done_at
+                        ? `完成于 ${formatTime(sub.done_at)}`
+                        : `创建于 ${formatTime(sub.created_at)}`}
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => handleEditSubtask(task.id, sub.id, sub.content)}
+                      className="text-xs text-gray-400 hover:text-gray-600 opacity-0 group-hover:opacity-100"
+                    >
+                      编辑
+                    </button>
+                    <button
+                      onClick={() => handleDeleteSubtask(task.id, sub.id)}
+                      className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100"
+                    >
+                      删除
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         )}
 
@@ -275,6 +399,7 @@ export default function Tasks() {
           </div>
         </div>
         <div className="flex gap-3 shrink-0">
+          <button onClick={() => handleReopen(task.id)} className="text-sm text-yellow-600 hover:text-yellow-800">重新打开</button>
           <button onClick={() => handleEdit(task)} className="text-sm text-gray-500 hover:text-gray-700">编辑</button>
           <ConfirmButton onConfirm={() => handleDelete(task.id)} />
         </div>
