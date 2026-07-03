@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { weeklyReportApi } from '../api';
 import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
+import DatePicker from '../components/DatePicker';
 
 function getWeekStart(date: string): string {
   const d = new Date(date);
@@ -94,6 +95,10 @@ export default function WeeklyReport() {
   const [weekStart, setWeekStart] = useState(getWeekStart(todayStr()));
   const [report, setReport] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [showExport, setShowExport] = useState(false);
+  const [exportFrom, setExportFrom] = useState(getWeekStart(todayStr()));
+  const [exportTo, setExportTo] = useState(getWeekStart(todayStr()));
+  const [exporting, setExporting] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -112,9 +117,8 @@ export default function WeeklyReport() {
   const handlePrevWeek = () => setWeekStart(addDays(weekStart, -7));
   const handleNextWeek = () => setWeekStart(addDays(weekStart, 7));
   const handleThisWeek = () => setWeekStart(getWeekStart(todayStr()));
-  const handleWeekPicker = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const picked = e.target.value;
-    if (picked) setWeekStart(getWeekStart(picked));
+  const handleWeekPicker = (v: string) => {
+    if (v) setWeekStart(getWeekStart(v));
   };
 
   const weekEnd = addDays(weekStart, 6);
@@ -160,24 +164,158 @@ export default function WeeklyReport() {
     showToast(ok ? '已复制到剪贴板' : '复制失败，请手动复制', ok ? 'success' : 'error');
   };
 
+  const reportToMarkdown = (r: any, start: string, end: string): string => {
+    let md = `# 周报 ${start} ~ ${end}\n\n`;
+    if (r.subtask_stats) {
+      md += `> 子任务: ${r.subtask_stats.total_done}/${r.subtask_stats.total_subtasks} 已完成\n\n`;
+    }
+    md += `## 每日完成\n\n`;
+    for (const day of r.days) {
+      if (!hasDayContent(day)) continue;
+      const weekday = weekdayNames[new Date(day.date).getDay() === 0 ? 6 : new Date(day.date).getDay() - 1];
+      md += `### ${day.date} ${weekday}\n`;
+      for (const task of day.tasks) {
+        const countStr = task.total_subtasks > 0 ? ` (${task.done_subtasks}/${task.total_subtasks})` : '';
+        md += `- ${task.content}${countStr}${task.tags ? ` [${task.tags}]` : ''}\n`;
+        md += flattenToMarkdown(task.subtask_tree || [], 1);
+      }
+      for (const g of (day.standalone_groups || [])) {
+        const countStr = g.total_subtasks > 0 ? ` (${g.done_subtasks}/${g.total_subtasks})` : '';
+        md += `- ${g.parent_task_content} (进行中任务的已完成子项)${countStr}${g.parent_tags ? ` [${g.parent_tags}]` : ''}\n`;
+        md += flattenToMarkdown(g.subtask_tree || [], 1);
+      }
+      md += '\n';
+    }
+    md += `## 按标签汇总\n\n`;
+    for (const [tag, items] of Object.entries(r.summary_by_tag)) {
+      md += `### ${tag}\n`;
+      for (const item of items as any[]) {
+        const countStr = item.total_subtasks > 0 ? ` (${item.done_subtasks}/${item.total_subtasks})` : '';
+        const label = item.is_in_progress_parent ? ' (进行中任务的已完成子项)' : '';
+        md += `- ${item.content}${countStr}${label}\n`;
+        md += flattenToMarkdown(item.subtask_tree || [], 1);
+      }
+      md += '\n';
+    }
+    return md;
+  };
+
+  const handleExportRange = async () => {
+    const fromWeek = getWeekStart(exportFrom);
+    const toWeek = getWeekStart(exportTo);
+    if (fromWeek > toWeek) {
+      showToast('起始周不能晚于结束周', 'error');
+      return;
+    }
+    setExporting(true);
+    try {
+      let allMd = '';
+      let current = fromWeek;
+      while (current <= toWeek) {
+        const r = await weeklyReportApi.get(current);
+        if (r.days.some((d: any) => hasDayContent(d))) {
+          allMd += reportToMarkdown(r, current, addDays(current, 6)) + '\n---\n\n';
+        }
+        current = addDays(current, 7);
+      }
+      if (!allMd) {
+        showToast('该区间暂无记录', 'error');
+      } else {
+        const ok = copyToClipboard(allMd.trimEnd());
+        showToast(ok ? '已复制到剪贴板' : '复制失败', ok ? 'success' : 'error');
+        setShowExport(false);
+      }
+    } catch {
+      showToast('导出失败', 'error');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  const handleExportFromToThis = async () => {
+    const fromWeek = getWeekStart(exportFrom);
+    const thisWeek = getWeekStart(todayStr());
+    if (fromWeek > thisWeek) {
+      showToast('起始周不能晚于本周', 'error');
+      return;
+    }
+    setExporting(true);
+    try {
+      let allMd = '';
+      let current = fromWeek;
+      while (current <= thisWeek) {
+        const r = await weeklyReportApi.get(current);
+        if (r.days.some((d: any) => hasDayContent(d))) {
+          allMd += reportToMarkdown(r, current, addDays(current, 6)) + '\n---\n\n';
+        }
+        current = addDays(current, 7);
+      }
+      if (!allMd) {
+        showToast('该区间暂无记录', 'error');
+      } else {
+        const ok = copyToClipboard(allMd.trimEnd());
+        showToast(ok ? '已复制到剪贴板' : '复制失败', ok ? 'success' : 'error');
+        setShowExport(false);
+      }
+    } catch {
+      showToast('导出失败', 'error');
+    } finally {
+      setExporting(false);
+    }
+  };
+
   return (
     <div className="p-6 max-w-3xl">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">周报</h1>
         <div className="flex items-center gap-2">
           <button onClick={handlePrevWeek} className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm hover:bg-gray-50 dark:hover:bg-gray-700">‹</button>
-          <input
-            type="date"
-            value={weekStart}
-            onChange={handleWeekPicker}
-            className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm text-gray-600 dark:text-gray-400"
-          />
+          <DatePicker value={weekStart} onChange={handleWeekPicker} />
           <span className="text-sm text-gray-500 dark:text-gray-400">{weekStart} ~ {weekEnd}</span>
           <button onClick={handleNextWeek} className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm hover:bg-gray-50 dark:hover:bg-gray-700">›</button>
           <button onClick={handleThisWeek} className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm hover:bg-gray-50 dark:hover:bg-gray-700">本周</button>
-          <button onClick={handleExport} className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">导出Markdown</button>
+          <button onClick={() => setShowExport(!showExport)} className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">导出</button>
         </div>
       </div>
+
+      {showExport && (
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
+          <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">导出选项</h3>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={handleExport}
+              className="text-left px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300"
+            >
+              导出当前周 ({weekStart} ~ {weekEnd})
+            </button>
+            <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded">
+              <span className="text-sm text-gray-600 dark:text-gray-400">导出周区间:</span>
+              <DatePicker value={exportFrom} onChange={(v) => setExportFrom(getWeekStart(v))} />
+              <span className="text-gray-400">~</span>
+              <DatePicker value={exportTo} onChange={(v) => setExportTo(getWeekStart(v))} />
+              <button
+                onClick={handleExportRange}
+                disabled={exporting}
+                className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 disabled:opacity-50 ml-auto"
+              >
+                {exporting ? '导出中...' : '导出'}
+              </button>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded">
+              <span className="text-sm text-gray-600 dark:text-gray-400">从指定周至本周:</span>
+              <DatePicker value={exportFrom} onChange={(v) => setExportFrom(getWeekStart(v))} />
+              <span className="text-sm text-gray-400">~ {getWeekStart(todayStr())}</span>
+              <button
+                onClick={handleExportFromToThis}
+                disabled={exporting}
+                className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 disabled:opacity-50 ml-auto"
+              >
+                {exporting ? '导出中...' : '导出'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {loading ? (
         <div className="text-gray-400 dark:text-gray-500">加载中...</div>

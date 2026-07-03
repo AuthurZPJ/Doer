@@ -4,6 +4,7 @@ import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
 import TagInput from '../components/TagInput';
 import ConfirmButton from '../components/ConfirmButton';
+import DatePicker from '../components/DatePicker';
 
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
@@ -450,11 +451,9 @@ export default function Tasks() {
 
           <div className="flex items-center gap-4 mb-2">
             <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400">已经完成</h2>
-            <input
-              type="date"
+            <DatePicker
               value={date}
-              onChange={e => setDate(e.target.value)}
-              className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm"
+              onChange={setDate}
             />
           </div>
           {completed.length === 0 ? (

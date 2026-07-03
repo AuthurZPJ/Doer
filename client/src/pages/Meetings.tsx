@@ -4,6 +4,7 @@ import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
 import TagInput from '../components/TagInput';
 import ConfirmButton from '../components/ConfirmButton';
+import DatePicker from '../components/DatePicker';
 
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
@@ -128,11 +129,9 @@ export default function Meetings() {
               className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
             />
             <div className="flex gap-3 items-center">
-              <input
-                type="date"
+              <DatePicker
                 value={meetingDate}
-                onChange={e => setMeetingDate(e.target.value)}
-                className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm"
+                onChange={setMeetingDate}
               />
               <div className="flex-1"><TagInput value={tags} onChange={setTags} /></div>
             </div>
@@ -186,11 +185,9 @@ export default function Meetings() {
                       className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
                     />
                     <div className="flex gap-3 items-center">
-                      <input
-                        type="date"
+                      <DatePicker
                         value={editDate}
-                        onChange={e => setEditDate(e.target.value)}
-                        className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm"
+                        onChange={setEditDate}
                       />
                       <div className="flex-1"><TagInput value={editTags} onChange={setEditTags} /></div>
                     </div>

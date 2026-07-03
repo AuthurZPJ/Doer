@@ -4,6 +4,7 @@ import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
 import TagInput from '../components/TagInput';
 import ConfirmButton from '../components/ConfirmButton';
+import DatePicker from '../components/DatePicker';
 
 function todayStr(): string {
   return new Date().toISOString().slice(0, 10);
@@ -146,11 +147,9 @@ export default function Todos() {
               <option value="medium">中优先级</option>
               <option value="low">低优先级</option>
             </select>
-            <input
-              type="date"
+            <DatePicker
               value={dueDate}
-              onChange={e => setDueDate(e.target.value)}
-              className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm"
+              onChange={setDueDate}
             />
           </div>
           <TagInput value={tags} onChange={setTags} />

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { dashboardApi, tasksApi, todosApi, meetingsApi, learningsApi, issuesApi } from '../api';
 import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
+import DatePicker from '../components/DatePicker';
 
 interface DashboardData {
   inProgressTasks: any[];
@@ -85,11 +86,9 @@ export default function Dashboard() {
     <div className="p-6">
       <div className="flex items-center gap-4 mb-6">
         <h1 className="text-2xl font-bold">今日看板</h1>
-        <input
-          type="date"
+        <DatePicker
           value={date}
-          onChange={e => setDate(e.target.value)}
-          className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm"
+          onChange={setDate}
         />
       </div>
 
