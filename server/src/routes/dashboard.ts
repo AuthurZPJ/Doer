@@ -39,10 +39,7 @@ router.get('/', (req, res) => {
   const learnings = db.prepare(
     'SELECT * FROM learnings ORDER BY created_at DESC LIMIT 5'
   ).all();
-  const issues = db.prepare(
-    `SELECT * FROM issues WHERE status = 'open' ORDER BY created_at DESC`
-  ).all();
-  res.json({ inProgressTasks: inProgressTasksWithSubs, meetings, todos, learnings, issues });
+  res.json({ inProgressTasks: inProgressTasksWithSubs, meetings, todos, learnings });
 });
 
 export default router;

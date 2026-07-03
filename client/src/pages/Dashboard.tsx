@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { dashboardApi, tasksApi, todosApi, meetingsApi, learningsApi, issuesApi } from '../api';
+import { dashboardApi, tasksApi, todosApi, meetingsApi, learningsApi } from '../api';
 import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
 import DatePicker from '../components/DatePicker';
@@ -10,7 +10,6 @@ interface DashboardData {
   meetings: any[];
   todos: any[];
   learnings: any[];
-  issues: any[];
 }
 
 function todayStr(): string {
@@ -31,7 +30,7 @@ function isOverdue(dueDate: string | null): boolean {
 export default function Dashboard() {
   const [date, setDate] = useState(todayStr());
   const [data, setData] = useState<DashboardData>({
-    inProgressTasks: [], meetings: [], todos: [], learnings: [], issues: []
+    inProgressTasks: [], meetings: [], todos: [], learnings: []
   });
   const [loading, setLoading] = useState(true);
   const [quickInput, setQuickInput] = useState('');
@@ -61,9 +60,6 @@ export default function Dashboard() {
           break;
         case 'todos':
           await todosApi.create({ content, priority: 'medium' });
-          break;
-        case 'issues':
-          await issuesApi.create({ content });
           break;
         case 'meetings':
           await meetingsApi.create({ title: content, meeting_date: date });
@@ -101,8 +97,7 @@ export default function Dashboard() {
           <option value="tasks">正在做</option>
           <option value="todos">未来计划</option>
           <option value="meetings">会议</option>
-          <option value="learnings">学习</option>
-          <option value="issues">问题</option>
+          <option value="learnings">知识点</option>
         </select>
         <input
           type="text"
@@ -120,7 +115,7 @@ export default function Dashboard() {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card title="正在做" link="/tasks" count={data.inProgressTasks.length}>
           {data.inProgressTasks.length === 0 ? <EmptyState message="暂无" /> : data.inProgressTasks.slice(0, 10).map((t: any) => (
             <div key={t.id} className="text-sm py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
@@ -151,18 +146,10 @@ export default function Dashboard() {
           ))}
         </Card>
 
-        <Card title="学习知识点" link="/learnings" count={data.learnings.length}>
+        <Card title="知识点" link="/learnings" count={data.learnings.length}>
           {data.learnings.length === 0 ? <EmptyState message="暂无" /> : data.learnings.map((l: any) => (
             <div key={l.id} className="text-sm py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
               {l.title}
-            </div>
-          ))}
-        </Card>
-
-        <Card title="当前问题" link="/issues" count={data.issues.length}>
-          {data.issues.length === 0 ? <EmptyState message="暂无" /> : data.issues.map((i: any) => (
-            <div key={i.id} className="text-sm py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
-              {i.content}
             </div>
           ))}
         </Card>

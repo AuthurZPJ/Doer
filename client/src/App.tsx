@@ -5,7 +5,6 @@ import Tasks from './pages/Tasks';
 import Todos from './pages/Todos';
 import Meetings from './pages/Meetings';
 import Learnings from './pages/Learnings';
-import Issues from './pages/Issues';
 import WeeklyReport from './pages/WeeklyReport';
 import SearchPage from './pages/SearchPage';
 import TagsPage from './pages/TagsPage';
@@ -21,7 +20,6 @@ export default function App() {
           <Route path="/todos" element={<Todos />} />
           <Route path="/meetings" element={<Meetings />} />
           <Route path="/learnings" element={<Learnings />} />
-          <Route path="/issues" element={<Issues />} />
           <Route path="/weekly-report" element={<WeeklyReport />} />
           <Route path="/search" element={<SearchPage />} />
           <Route path="/tags" element={<TagsPage />} />

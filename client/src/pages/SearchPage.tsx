@@ -94,24 +94,13 @@ export default function SearchPage() {
             ))}
           </Section>
 
-          <Section title="学习知识点" count={results.learnings.length}>
+          <Section title="知识点" count={results.learnings.length}>
             {results.learnings.map((l: any) => (
               <ResultCard
                 key={l.id}
                 preview={l.title}
                 date={dateOf(l, 'created_at')}
                 tags={l.tags}
-              />
-            ))}
-          </Section>
-
-          <Section title="当前问题" count={results.issues.length}>
-            {results.issues.map((i: any) => (
-              <ResultCard
-                key={i.id}
-                preview={i.content}
-                date={dateOf(i, 'created_at')}
-                tags={i.tags}
               />
             ))}
           </Section>

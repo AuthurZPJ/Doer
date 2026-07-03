@@ -56,7 +56,7 @@ export default function Learnings() {
   return (
     <div className="p-6 max-w-3xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">学习知识点</h1>
+        <h1 className="text-2xl font-bold">知识点</h1>
         <button
           onClick={() => setShowForm(!showForm)}
           className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
@@ -96,7 +96,7 @@ export default function Learnings() {
       {loading ? (
         <div className="text-gray-400 dark:text-gray-500">加载中...</div>
       ) : learnings.length === 0 ? (
-        <EmptyState message="暂无学习记录" onRetry={load} />
+            <EmptyState message="暂无知识点" onRetry={load} />
       ) : (
         <div className="space-y-2">
           {learnings.map(l => (
