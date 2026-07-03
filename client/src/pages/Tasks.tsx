@@ -68,10 +68,10 @@ export default function Tasks() {
       setCompleted(completedTasks);
 
       const subtaskEntries = await Promise.all(
-        inProgressTasks.map((t: any) => subtasksApi.list(t.id))
+        [...inProgressTasks, ...completedTasks].map((t: any) => subtasksApi.list(t.id))
       );
       const map: Record<number, any[]> = {};
-      inProgressTasks.forEach((t: any, i: number) => {
+      [...inProgressTasks, ...completedTasks].forEach((t: any, i: number) => {
         map[t.id] = subtaskEntries[i];
       });
       setSubtaskMap(map);
@@ -331,21 +331,43 @@ export default function Tasks() {
     );
   };
 
+  const renderCompletedSubtaskNode = (node: SubtaskNode) => (
+    <div key={node.id} className="space-y-1">
+      <div className="flex items-center gap-2">
+        <span className="text-gray-300">└</span>
+        <span className={`text-sm ${node.status === 'done' ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-600 dark:text-gray-400'}`}>
+          {node.content}
+        </span>
+        <span className="text-xs text-gray-400 dark:text-gray-500">
+          {node.status === 'done' && node.done_at ? `完成于 ${formatTime(node.done_at)}` : `未完成`}
+        </span>
+      </div>
+      {node.children.length > 0 && (
+        <div className="ml-4 space-y-1">
+          {node.children.map(child => renderCompletedSubtaskNode(child))}
+        </div>
+      )}
+    </div>
+  );
+
   const renderCompletedTask = (task: any) => {
+    const flat = subtaskMap[task.id] || [];
+    const tree = buildSubtree(flat, null);
     return (
-      <div className="flex items-start justify-between">
-        <div className="flex-1">
-          {editingTaskId === task.id ? (
-            <input
-              type="text"
-              value={taskEditText}
-              onChange={e => setTaskEditText(e.target.value)}
-              onKeyDown={e => {
-                if (e.key === 'Enter') saveEditTask();
-                if (e.key === 'Escape') cancelEditTask();
-              }}
-              onBlur={cancelEditTask}
-              autoFocus
+      <div>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            {editingTaskId === task.id ? (
+              <input
+                type="text"
+                value={taskEditText}
+                onChange={e => setTaskEditText(e.target.value)}
+                onKeyDown={e => {
+                  if (e.key === 'Enter') saveEditTask();
+                  if (e.key === 'Escape') cancelEditTask();
+                }}
+                onBlur={cancelEditTask}
+                autoFocus
                 className="w-full border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm"
               />
             ) : (
@@ -356,15 +378,24 @@ export default function Tasks() {
                 {task.content}
               </p>
             )}
-            <div className="flex gap-2 mt-1 text-xs text-gray-400 dark:text-gray-500">
+            <div className="flex gap-2 mt-0.5 text-xs text-gray-400 dark:text-gray-500">
               {task.tags && <span className="text-blue-500 dark:text-blue-400">{task.tags}</span>}
               <span>{new Date(task.created_at).toLocaleDateString()}</span>
+              {flat.length > 0 && (
+                <span className="text-gray-500 dark:text-gray-400">{flat.filter((s: any) => s.status === 'done').length}/{flat.length} 子项</span>
+              )}
             </div>
           </div>
           <div className="flex gap-3 shrink-0">
             <button onClick={() => handleReopen(task.id)} className="text-sm text-yellow-600 dark:text-yellow-400 hover:text-yellow-800">重新打开</button>
-          <ConfirmButton onConfirm={() => handleDelete(task.id)} />
+            <ConfirmButton onConfirm={() => handleDelete(task.id)} />
+          </div>
         </div>
+        {tree.length > 0 && (
+          <div className="ml-4 mt-2 space-y-1 border-l border-gray-200 dark:border-gray-700 pl-3">
+            {tree.map(node => renderCompletedSubtaskNode(node))}
+          </div>
+        )}
       </div>
     );
   };
