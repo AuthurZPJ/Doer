@@ -441,7 +441,7 @@ export default function Tasks() {
             )}
             <div className="flex gap-2 mt-0.5 text-xs text-gray-400 dark:text-gray-500">
               {task.tags && <span className="text-blue-500 dark:text-blue-400">{task.tags}</span>}
-              <span>{new Date(task.created_at).toLocaleDateString()}</span>
+              <span>{task.completed_at ? new Date(task.completed_at).toLocaleDateString() : new Date(task.created_at).toLocaleDateString()}</span>
               {task.due_date && <span>截止: {task.due_date}</span>}
               {flat.length > 0 && (
                 <span className="text-gray-500 dark:text-gray-400">{flat.filter((s: any) => s.status === 'done').length}/{flat.length} 子项</span>
