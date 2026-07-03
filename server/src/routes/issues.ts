@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getDb } from '../db/index.js';
+import { getDb, saveTags } from '../db/index.js';
 
 const router = Router();
 
@@ -18,6 +18,7 @@ router.post('/', (req, res) => {
   const info = getDb().prepare(
     'INSERT INTO issues (content, tags, status, created_at) VALUES (?, ?, ?, ?)'
   ).run(content, tags, 'open', now);
+  saveTags(tags);
   res.status(201).json({ id: info.lastInsertRowid });
 });
 

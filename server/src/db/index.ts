@@ -29,3 +29,13 @@ export function getDb(): Database.Database {
 export function getDbPath(): string {
   return DB_PATH;
 }
+
+export function saveTags(tagsStr: string): void {
+  if (!tagsStr) return;
+  const tags = tagsStr.split(',').map(t => t.trim()).filter(Boolean);
+  if (tags.length === 0) return;
+  const stmt = getDb().prepare('INSERT OR IGNORE INTO tags (name) VALUES (?)');
+  for (const tag of tags) {
+    stmt.run(tag);
+  }
+}

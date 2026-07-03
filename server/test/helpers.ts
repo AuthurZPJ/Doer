@@ -1,8 +1,7 @@
 import Database from 'better-sqlite3';
-import { readFileSync } from 'fs';
+import { readFileSync, mkdtempSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
-import { mkdtempSync } from 'fs';
 import { tmpdir } from 'os';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -15,4 +14,14 @@ export function createTestDb(): Database.Database {
   const schema = readFileSync(SCHEMA_PATH, 'utf-8');
   db.exec(schema);
   return db;
+}
+
+export function saveTagsWithDb(db: Database.Database, tagsStr: string): void {
+  if (!tagsStr) return;
+  const tags = tagsStr.split(',').map(t => t.trim()).filter(Boolean);
+  if (tags.length === 0) return;
+  const stmt = db.prepare('INSERT OR IGNORE INTO tags (name) VALUES (?)');
+  for (const tag of tags) {
+    stmt.run(tag);
+  }
 }

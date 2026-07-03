@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { getDb } from '../db/index.js';
+import { getDb, saveTags } from '../db/index.js';
 
 const router = Router();
 
@@ -22,6 +22,7 @@ router.post('/', (req, res) => {
   const info = getDb().prepare(
     'INSERT INTO tasks (content, tags, completed_at, created_at) VALUES (?, ?, ?, ?)'
   ).run(content, tags, today(), now);
+  saveTags(tags);
   res.status(201).json({ id: info.lastInsertRowid });
 });
 
@@ -34,6 +35,7 @@ router.put('/:id', (req, res) => {
   if (fields.length === 0) return res.status(400).json({ error: 'no fields to update' });
   values.push(req.params.id);
   getDb().prepare(`UPDATE tasks SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+  if (tags !== undefined) saveTags(tags);
   res.json({ ok: true });
 });
 

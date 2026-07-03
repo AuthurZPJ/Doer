@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import Database from 'better-sqlite3';
-import { createTestDb } from './helpers';
+import { createTestDb, saveTagsWithDb } from './helpers';
 
 describe('meetings table', () => {
   let db: Database.Database;
@@ -122,5 +122,19 @@ describe('tags table', () => {
     expect(() => {
       db.prepare('INSERT INTO tags (name) VALUES (?)').run('前端');
     }).toThrow();
+  });
+
+  it('should save tags from comma-separated string without duplicates', () => {
+    saveTagsWithDb(db, '前端, 后端, 前端, 测试');
+    const tags = db.prepare('SELECT * FROM tags ORDER BY id').all() as any[];
+    expect(tags).toHaveLength(3);
+    expect(tags.map(t => t.name)).toEqual(['前端', '后端', '测试']);
+  });
+
+  it('should not fail on empty or whitespace-only tags', () => {
+    saveTagsWithDb(db, '');
+    saveTagsWithDb(db, ' , , ');
+    const tags = db.prepare('SELECT * FROM tags').all();
+    expect(tags).toHaveLength(0);
   });
 });
