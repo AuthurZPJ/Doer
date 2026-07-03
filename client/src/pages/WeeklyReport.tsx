@@ -154,8 +154,8 @@ export default function WeeklyReport() {
 
   const weekEnd = addDays(weekStart, 6);
   const hasDayContent = (day: any) => day.tasks.length > 0 || (day.standalone_groups?.length || 0) > 0;
-  const activeDays = report?.days?.filter(hasDayContent) || [];
-  const totalTasks = activeDays.reduce((sum: number, d: any) => sum + d.tasks.length + (d.standalone_groups?.length || 0), 0) || 0;
+  const allDays = report?.days || [];
+  const totalTasks = allDays.reduce((sum: number, d: any) => sum + d.tasks.length + (d.standalone_groups?.length || 0), 0) || 0;
 
   const handleExport = () => {
     if (!report) return;
@@ -281,7 +281,7 @@ export default function WeeklyReport() {
 
           <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 tracking-wide mb-2">每日完成</h2>
           <div className="space-y-3 mb-6 slide-up">
-            {activeDays.map((day: any) => {
+            {allDays.map((day: any) => {
               const weekday = weekdayNames[new Date(day.date).getDay() === 0 ? 6 : new Date(day.date).getDay() - 1];
               const dayCount = day.tasks.length + (day.standalone_groups?.length || 0);
               return (
