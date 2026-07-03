@@ -78,7 +78,7 @@ export default function TagInput({ value, onChange }: TagInputProps) {
             }
           }}
           onFocus={() => { fetchTags(); setShowSuggestions(true); }}
-          placeholder={currentTags.length === 0 ? '输入标签' : ''}
+          placeholder={currentTags.length === 0 ? '可选标签' : ''}
           className="flex-1 min-w-[60px] outline-none text-sm"
         />
       </div>

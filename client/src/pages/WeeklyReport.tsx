@@ -23,6 +23,56 @@ function todayStr(): string {
 
 const weekdayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];
 
+interface SubtaskNode {
+  id: number;
+  content: string;
+  children?: SubtaskNode[];
+}
+
+function renderSubtaskTree(nodes: SubtaskNode[]) {
+  return nodes.map(node => (
+    <li key={node.id}>
+      <div className="flex items-start gap-2">
+        <span className="text-gray-300">└</span>
+        <span className="text-xs text-gray-500">{node.content}</span>
+      </div>
+      {node.children && node.children.length > 0 && (
+        <ul className="ml-3 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
+          {renderSubtaskTree(node.children)}
+        </ul>
+      )}
+    </li>
+  ));
+}
+
+function renderSummarySubtasks(nodes: SubtaskNode[]) {
+  return nodes.map(node => (
+    <li key={node.id}>
+      <div className="flex items-start gap-2 ml-3">
+        <span className="text-gray-300">·</span>
+        <span className="text-xs text-gray-400">{node.content}</span>
+      </div>
+      {node.children && node.children.length > 0 && (
+        <ul className="ml-4 space-y-0.5 mt-0.5">
+          {renderSummarySubtasks(node.children)}
+        </ul>
+      )}
+    </li>
+  ));
+}
+
+function flattenToMarkdown(nodes: SubtaskNode[], depth: number): string {
+  const indent = '  '.repeat(depth);
+  let out = '';
+  for (const node of nodes) {
+    out += `${indent}- ${node.content}\n`;
+    if (node.children && node.children.length > 0) {
+      out += flattenToMarkdown(node.children, depth + 1);
+    }
+  }
+  return out;
+}
+
 export default function WeeklyReport() {
   const [weekStart, setWeekStart] = useState(getWeekStart(todayStr()));
   const [report, setReport] = useState<any>(null);
@@ -47,35 +97,41 @@ export default function WeeklyReport() {
   const handleThisWeek = () => setWeekStart(getWeekStart(todayStr()));
 
   const weekEnd = report?.week_end || addDays(weekStart, 6);
-  const totalTasks = report?.days?.reduce((sum: number, d: any) => sum + d.tasks.length + (d.standaloneSubtasks?.length || 0), 0) || 0;
+  const totalTasks = report?.days?.reduce((sum: number, d: any) => sum + d.tasks.length + (d.standalone_groups?.length || 0), 0) || 0;
 
-  const hasDayContent = (day: any) => day.tasks.length > 0 || (day.standaloneSubtasks?.length || 0) > 0;
+  const hasDayContent = (day: any) => day.tasks.length > 0 || (day.standalone_groups?.length || 0) > 0;
 
   const handleExport = () => {
     if (!report) return;
     let md = `# 周报 ${weekStart} ~ ${weekEnd}\n\n`;
+    if (report.subtask_stats) {
+      md += `> 子任务: ${report.subtask_stats.total_done}/${report.subtask_stats.total_subtasks} 已完成\n\n`;
+    }
     md += `## 每日完成\n\n`;
     for (const day of report.days) {
       if (!hasDayContent(day)) continue;
       const weekday = weekdayNames[new Date(day.date).getDay() === 0 ? 6 : new Date(day.date).getDay() - 1];
       md += `### ${day.date} ${weekday}\n`;
       for (const task of day.tasks) {
-        md += `- ${task.content}${task.tags ? ` [${task.tags}]` : ''}\n`;
-        const doneSubs = (task.subtasks || []).filter((s: any) => s.status === 'done');
-        for (const sub of doneSubs) {
-          md += `  - └ ${sub.content}\n`;
-        }
+        const countStr = task.total_subtasks > 0 ? ` (${task.done_subtasks}/${task.total_subtasks})` : '';
+        md += `- ${task.content}${countStr}${task.tags ? ` [${task.tags}]` : ''}\n`;
+        md += flattenToMarkdown(task.subtask_tree || [], 1);
       }
-      for (const sub of (day.standaloneSubtasks || [])) {
-        md += `- └ ${sub.content} (主任务未完成)${sub.parent_tags ? ` [${sub.parent_tags}]` : ''}\n`;
+      for (const g of (day.standalone_groups || [])) {
+        const countStr = g.total_subtasks > 0 ? ` (${g.done_subtasks}/${g.total_subtasks})` : '';
+        md += `- ${g.parent_task_content} (进行中任务的已完成子项)${countStr}${g.parent_tags ? ` [${g.parent_tags}]` : ''}\n`;
+        md += flattenToMarkdown(g.subtask_tree || [], 1);
       }
       md += '\n';
     }
     md += `## 按标签汇总\n\n`;
-    for (const [tag, tasks] of Object.entries(report.summary_by_tag)) {
+    for (const [tag, items] of Object.entries(report.summary_by_tag)) {
       md += `### ${tag}\n`;
-      for (const task of tasks as string[]) {
-        md += `- ${task}\n`;
+      for (const item of items as any[]) {
+        const countStr = item.total_subtasks > 0 ? ` (${item.done_subtasks}/${item.total_subtasks})` : '';
+        const label = item.is_in_progress_parent ? ' (进行中任务的已完成子项)' : '';
+        md += `- ${item.content}${countStr}${label}\n`;
+        md += flattenToMarkdown(item.subtask_tree || [], 1);
       }
       md += '\n';
     }
@@ -103,7 +159,12 @@ export default function WeeklyReport() {
       ) : (
         <>
           <div className="bg-white rounded-lg shadow p-4 mb-4">
-            <p className="text-sm text-gray-500">本周共完成 {totalTasks} 项工作</p>
+            <p className="text-sm text-gray-500">
+              本周共完成 {totalTasks} 项工作
+              {report.subtask_stats && (
+                <span className="ml-2 text-gray-400">· 子任务 {report.subtask_stats.total_done}/{report.subtask_stats.total_subtasks} 已完成</span>
+              )}
+            </p>
           </div>
 
           <h2 className="text-sm font-semibold text-gray-600 mb-2">每日完成</h2>
@@ -112,40 +173,45 @@ export default function WeeklyReport() {
               <div key={day.date} className="bg-white rounded-lg shadow p-4">
                 <p className="text-sm font-medium mb-2">
                   {day.date} {weekdayNames[i]}
-                  <span className="ml-2 text-xs text-gray-400">{day.tasks.length + (day.standaloneSubtasks?.length || 0)} 项</span>
+                  <span className="ml-2 text-xs text-gray-400">{day.tasks.length + (day.standalone_groups?.length || 0)} 项</span>
                 </p>
                 {!hasDayContent(day) ? (
                   <p className="text-sm text-gray-300">无</p>
                 ) : (
                   <ul className="text-sm space-y-1">
-                    {day.tasks.map((t: any) => {
-                      const doneSubs = (t.subtasks || []).filter((s: any) => s.status === 'done');
-                      return (
-                        <li key={t.id}>
-                          <div className="flex items-start gap-2">
-                            <span className="text-gray-400">•</span>
-                            <span>{t.content}</span>
-                            {t.tags && <span className="text-xs text-blue-500">[{t.tags}]</span>}
-                          </div>
-                          {doneSubs.length > 0 && (
-                            <ul className="ml-4 space-y-0.5 mt-0.5">
-                              {doneSubs.map((sub: any) => (
-                                <li key={sub.id} className="flex items-start gap-2 text-gray-500">
-                                  <span className="text-gray-300">└</span>
-                                  <span className="text-xs">{sub.content}</span>
-                                </li>
-                              ))}
-                            </ul>
+                    {day.tasks.map((t: any) => (
+                      <li key={t.id}>
+                        <div className="flex items-start gap-2">
+                          <span className="text-gray-400">•</span>
+                          <span>{t.content}</span>
+                          {t.total_subtasks > 0 && (
+                            <span className="text-xs text-gray-400">{t.done_subtasks}/{t.total_subtasks} 已完成</span>
                           )}
-                        </li>
-                      );
-                    })}
-                    {(day.standaloneSubtasks || []).map((sub: any) => (
-                      <li key={`sub-${sub.id}`} className="flex items-start gap-2">
-                        <span className="text-gray-400">•</span>
-                        <span className="text-gray-600">└ {sub.content}</span>
-                        <span className="text-xs text-yellow-600">主任务未完成</span>
-                        {sub.parent_tags && <span className="text-xs text-blue-500">[{sub.parent_tags}]</span>}
+                          {t.tags && <span className="text-xs text-blue-500">[{t.tags}]</span>}
+                        </div>
+                        {t.subtask_tree && t.subtask_tree.length > 0 && (
+                          <ul className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
+                            {renderSubtaskTree(t.subtask_tree)}
+                          </ul>
+                        )}
+                      </li>
+                    ))}
+                    {(day.standalone_groups || []).map((g: any) => (
+                      <li key={`grp-${g.parent_task_id}`} className="mt-2">
+                        <p className="text-xs font-medium text-yellow-600 mb-1">进行中任务的已完成子项</p>
+                        <div className="flex items-start gap-2">
+                          <span className="text-gray-400">•</span>
+                          <span className="text-gray-600">{g.parent_task_content}</span>
+                          {g.total_subtasks > 0 && (
+                            <span className="text-xs text-gray-400">{g.done_subtasks}/{g.total_subtasks} 已完成</span>
+                          )}
+                          {g.parent_tags && <span className="text-xs text-blue-500">[{g.parent_tags}]</span>}
+                        </div>
+                        {g.subtask_tree && g.subtask_tree.length > 0 && (
+                          <ul className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
+                            {renderSubtaskTree(g.subtask_tree)}
+                          </ul>
+                        )}
                       </li>
                     ))}
                   </ul>
@@ -156,13 +222,27 @@ export default function WeeklyReport() {
 
           <h2 className="text-sm font-semibold text-gray-600 mb-2">按标签汇总</h2>
           <div className="bg-white rounded-lg shadow p-4">
-            {Object.entries(report.summary_by_tag).map(([tag, tasks]) => (
+            {Object.entries(report.summary_by_tag).map(([tag, items]) => (
               <div key={tag} className="mb-4 last:mb-0">
                 <p className="text-sm font-medium text-blue-600 mb-1">{tag}</p>
                 <ul className="text-sm space-y-1 ml-4">
-                  {(tasks as string[]).map((task, i) => (
-                    <li key={i} className={`text-gray-600 ${task.startsWith('  └') ? 'ml-4 text-xs text-gray-500' : ''}`}>
-                      • {task}
+                  {(items as any[]).map((item, i) => (
+                    <li key={i}>
+                      <div className="flex items-start gap-2 flex-wrap">
+                        <span className="text-gray-400">•</span>
+                        <span className="text-gray-700">{item.content}</span>
+                        {item.total_subtasks > 0 && (
+                          <span className="text-xs text-gray-400">{item.done_subtasks}/{item.total_subtasks} 已完成</span>
+                        )}
+                        {item.is_in_progress_parent && (
+                          <span className="text-xs text-yellow-600">进行中任务的已完成子项</span>
+                        )}
+                      </div>
+                      {item.subtask_tree && item.subtask_tree.length > 0 && (
+                        <ul className="ml-4 space-y-0.5 mt-0.5">
+                          {renderSummarySubtasks(item.subtask_tree)}
+                        </ul>
+                      )}
                     </li>
                   ))}
                 </ul>

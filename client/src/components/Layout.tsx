@@ -4,14 +4,13 @@ import { showToast } from './Toast';
 
 const navItems = [
   { path: '/', label: '今日看板' },
-  { path: '/tasks', label: '今日完成' },
+  { path: '/tasks', label: 'Doing' },
   { path: '/todos', label: '未来计划' },
   { path: '/meetings', label: '会议记录' },
   { path: '/learnings', label: '学习知识点' },
   { path: '/issues', label: '当前问题' },
   { path: '/weekly-report', label: '周报' },
   { path: '/search', label: '全局搜索' },
-  { path: '/monthly-stats', label: '月度统计' },
   { path: '/tags', label: '标签管理' },
 ];
 

@@ -12,7 +12,6 @@ import tagsRouter from './routes/tags.js';
 import backupRouter from './routes/backup.js';
 import subtasksRouter from './routes/subtasks.js';
 import searchRouter from './routes/search.js';
-import monthlyStatsRouter from './routes/monthly-stats.js';
 
 const app = express();
 const PORT = 3001;
@@ -38,7 +37,6 @@ app.use('/api/weekly-report', weeklyReportRouter);
 app.use('/api/tags', tagsRouter);
 app.use('/api/backup', backupRouter);
 app.use('/api/search', searchRouter);
-app.use('/api/monthly-stats', monthlyStatsRouter);
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);

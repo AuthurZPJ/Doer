@@ -49,8 +49,13 @@ function migrate(db: Database.Database): void {
   }
 
   const subtaskCols = db.prepare("PRAGMA table_info(subtasks)").all() as any[];
-  if (subtaskCols.length > 0 && !subtaskCols.some(c => c.name === 'sort_order')) {
-    db.exec("ALTER TABLE subtasks ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0");
+  if (subtaskCols.length > 0) {
+    if (!subtaskCols.some(c => c.name === 'sort_order')) {
+      db.exec("ALTER TABLE subtasks ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0");
+    }
+    if (!subtaskCols.some(c => c.name === 'parent_subtask_id')) {
+      db.exec("ALTER TABLE subtasks ADD COLUMN parent_subtask_id INTEGER REFERENCES subtasks(id) ON DELETE CASCADE");
+    }
   }
 
   const issueCols = db.prepare("PRAGMA table_info(issues)").all() as any[];

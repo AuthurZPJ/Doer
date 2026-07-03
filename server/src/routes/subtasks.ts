@@ -13,21 +13,21 @@ router.get('/', (req, res) => {
 
 router.post('/', (req, res) => {
   const taskId = req.params.taskId;
-  const { content } = req.body;
+  const { content, parent_subtask_id = null } = req.body;
   if (!content) return res.status(400).json({ error: 'content is required' });
   const now = new Date().toISOString();
   const maxOrder = getDb().prepare(
-    'SELECT COALESCE(MAX(sort_order), -1) as max_order FROM subtasks WHERE task_id = ?'
-  ).get(taskId) as any;
+    'SELECT COALESCE(MAX(sort_order), -1) as max_order FROM subtasks WHERE task_id = ? AND parent_subtask_id IS ?'
+  ).get(taskId, parent_subtask_id) as any;
   const sortOrder = (maxOrder.max_order ?? -1) + 1;
   const info = getDb().prepare(
-    'INSERT INTO subtasks (task_id, content, status, sort_order, created_at) VALUES (?, ?, ?, ?, ?)'
-  ).run(taskId, content, 'pending', sortOrder, now);
+    'INSERT INTO subtasks (task_id, parent_subtask_id, content, status, sort_order, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(taskId, parent_subtask_id, content, 'pending', sortOrder, now);
   res.status(201).json({ id: info.lastInsertRowid });
 });
 
 router.put('/:id', (req, res) => {
-  const { content, status, sort_order } = req.body;
+  const { content, status, sort_order, parent_subtask_id } = req.body;
   const db = getDb();
   const subtask = db.prepare('SELECT * FROM subtasks WHERE id = ?').get(req.params.id) as any;
   if (!subtask) return res.status(404).json({ error: 'subtask not found' });
@@ -39,6 +39,7 @@ router.put('/:id', (req, res) => {
     updates.done_at = status === 'done' ? new Date().toISOString() : null;
   }
   if (sort_order !== undefined) updates.sort_order = sort_order;
+  if (parent_subtask_id !== undefined) updates.parent_subtask_id = parent_subtask_id;
 
   if (Object.keys(updates).length === 0) {
     return res.status(400).json({ error: 'no fields to update' });

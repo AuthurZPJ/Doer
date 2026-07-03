@@ -58,17 +58,13 @@ export const backupApi = {
 
 export const subtasksApi = {
   list: (taskId: number) => api.get(`/tasks/${taskId}/subtasks`).then(r => r.data),
-  create: (taskId: number, content: string) => api.post(`/tasks/${taskId}/subtasks`, { content }).then(r => r.data),
-  update: (taskId: number, id: number, data: { content?: string; status?: string; sort_order?: number }) => api.put(`/tasks/${taskId}/subtasks/${id}`, data).then(r => r.data),
+  create: (taskId: number, content: string, parentSubtaskId?: number | null) => api.post(`/tasks/${taskId}/subtasks`, { content, parent_subtask_id: parentSubtaskId ?? null }).then(r => r.data),
+  update: (taskId: number, id: number, data: { content?: string; status?: string; sort_order?: number; parent_subtask_id?: number | null }) => api.put(`/tasks/${taskId}/subtasks/${id}`, data).then(r => r.data),
   delete: (taskId: number, id: number) => api.delete(`/tasks/${taskId}/subtasks/${id}`).then(r => r.data),
 };
 
 export const searchApi = {
   search: (q: string) => api.get('/search', { params: { q } }).then(r => r.data),
-};
-
-export const monthlyStatsApi = {
-  get: (month?: string) => api.get('/monthly-stats', { params: { month } }).then(r => r.data),
 };
 
 export default api;
