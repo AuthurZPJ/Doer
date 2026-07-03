@@ -1,23 +1,41 @@
 const { app, BrowserWindow, Menu } = require('electron');
-const { spawn } = require('child_process');
+const { fork } = require('child_process');
 const path = require('path');
+const http = require('http');
 
 let mainWindow = null;
 let serverProcess = null;
 
 function startServer() {
-  const serverDir = app.isPackaged
-    ? path.join(process.resourcesPath, 'server')
-    : path.join(__dirname, 'server');
+  const isDev = !!process.env.DOER_DEV;
+  if (isDev) return;
 
-  serverProcess = spawn('node', ['src/index.ts'], {
+  const serverDir = path.join(__dirname, '..', 'server');
+  const entryFile = path.join(serverDir, 'dist', 'index.js');
+
+  serverProcess = fork(entryFile, [], {
     cwd: serverDir,
-    env: { ...process.env, NODE_ENV: 'production' },
-    stdio: 'pipe',
+    env: { ...process.env, NODE_ENV: 'production', ELECTRON_RUN_AS_NODE: '1' },
+    execPath: process.execPath,
+    stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
   });
 
-  serverProcess.stdout.on('data', (data) => console.log(`[server] ${data}`));
-  serverProcess.stderr.on('data', (data) => console.error(`[server] ${data}`));
+  serverProcess.stdout.on('data', (data) => console.log(`[server] ${data.toString().trim()}`));
+  serverProcess.stderr.on('data', (data) => console.error(`[server] ${data.toString().trim()}`));
+  serverProcess.on('error', (err) => console.error(`[server] fork error: ${err.message}`));
+}
+
+function waitForServer(callback, retries = 30) {
+  const req = http.get('http://localhost:3001/api/health', (res) => {
+    if (res.statusCode === 200) { callback(); return; }
+    if (retries > 0) setTimeout(() => waitForServer(callback, retries - 1), 500);
+    else callback();
+  });
+  req.on('error', () => {
+    if (retries > 0) setTimeout(() => waitForServer(callback, retries - 1), 500);
+    else callback();
+  });
+  req.setTimeout(2000, () => { req.destroy(); if (retries > 0) setTimeout(() => waitForServer(callback, retries - 1), 500); else callback(); });
 }
 
 function createWindow() {
@@ -31,25 +49,23 @@ function createWindow() {
     },
   });
 
-  if (app.isPackaged) {
-    mainWindow.loadFile(path.join(__dirname, 'client/dist/index.html'));
+  if (app.isPackaged || !process.env.DOER_DEV) {
+    mainWindow.loadFile(path.join(__dirname, '..', 'client/dist/index.html'));
   } else {
     mainWindow.loadURL('http://localhost:5173');
   }
 
-  mainWindow.on('closed', () => {
-    mainWindow = null;
-  });
-
+  mainWindow.on('closed', () => { mainWindow = null; });
   Menu.setApplicationMenu(null);
 }
 
 app.whenReady().then(() => {
-  if (!app.isPackaged) {
+  const isDev = !!process.env.DOER_DEV;
+  if (isDev) {
     createWindow();
   } else {
     startServer();
-    setTimeout(() => createWindow(), 2000);
+    waitForServer(() => createWindow());
   }
 
   app.on('activate', () => {
@@ -58,16 +74,10 @@ app.whenReady().then(() => {
 });
 
 app.on('window-all-closed', () => {
-  if (serverProcess) {
-    serverProcess.kill();
-    serverProcess = null;
-  }
+  if (serverProcess) { serverProcess.kill(); serverProcess = null; }
   if (process.platform !== 'darwin') app.quit();
 });
 
 app.on('before-quit', () => {
-  if (serverProcess) {
-    serverProcess.kill();
-    serverProcess = null;
-  }
+  if (serverProcess) { serverProcess.kill(); serverProcess = null; }
 });

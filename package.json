@@ -2,6 +2,7 @@
   "name": "doer",
   "private": true,
   "version": "1.1.0",
+  "main": "electron/main.cjs",
   "workspaces": [
     "client",
     "server"
@@ -14,11 +15,16 @@
     "build": "npm run build -w server && npm run build -w client",
     "test": "npm run test -w server",
     "electron": "electron .",
-    "electron:dev": "concurrently -n server,client,electron -c blue,green,magenta \"npm run dev -w server\" \"npm run dev -w client\" \"wait-on http://localhost:5173 && electron .\""
+    "electron:rebuild": "electron-rebuild -f -w better-sqlite3",
+    "electron:dev": "concurrently -n server,client,electron -c blue,green,magenta \"npm run dev -w server\" \"npm run dev -w client\" \"wait-on http://localhost:5173 && cross-env DOER_DEV=1 electron .\""
   },
   "devDependencies": {
     "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
     "electron": "^33.0.0",
     "wait-on": "^8.0.0"
+  },
+  "dependencies": {
+    "@electron/rebuild": "^4.1.0"
   }
 }

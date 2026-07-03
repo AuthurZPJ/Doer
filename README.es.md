@@ -42,6 +42,7 @@ Frontend en http://localhost:5173, backend en http://localhost:3001, abre el nav
 ```bash
 npm install
 npm run build
+npm run electron:rebuild   # recompilar módulos nativos para Electron (solo la primera vez)
 npm run electron
 ```
 
@@ -50,6 +51,8 @@ Modo desarrollo:
 ```bash
 npm run electron:dev
 ```
+
+Nota: `npm run electron:rebuild` recompila `better-sqlite3` para la versión de Node de Electron. Después de ejecutar Electron, ejecute `npm rebuild better-sqlite3` para volver a Node normal para `npm run dev`.
 
 Empaquetar como instalador:
 

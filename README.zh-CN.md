@@ -42,6 +42,7 @@ npm run dev
 ```bash
 npm install
 npm run build
+npm run electron:rebuild   # 为 Electron 重新编译原生模块（仅首次）
 npm run electron
 ```
 
@@ -50,6 +51,8 @@ npm run electron
 ```bash
 npm run electron:dev
 ```
+
+注意：`npm run electron:rebuild` 会为 Electron 的 Node 版本重新编译 `better-sqlite3`。运行 Electron 后，需要执行 `npm rebuild better-sqlite3` 切回普通 Node 以使用 `npm run dev`。
 
 打包为安装包：
 
