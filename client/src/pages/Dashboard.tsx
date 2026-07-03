@@ -4,16 +4,13 @@ import { dashboardApi, tasksApi, todosApi, meetingsApi, learningsApi } from '../
 import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
 import DatePicker from '../components/DatePicker';
+import { todayStr } from '../utils/date';
 
 interface DashboardData {
   inProgressTasks: any[];
   meetings: any[];
   todos: any[];
   learnings: any[];
-}
-
-function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
 }
 
 const priorityColors: Record<string, string> = {

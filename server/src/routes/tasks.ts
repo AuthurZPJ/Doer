@@ -1,10 +1,11 @@
 import { Router } from 'express';
 import { getDb, saveTags } from '../db/index.js';
+import { todayStr } from '../utils/date.js';
 
 const router = Router();
 
 function today(): string {
-  return new Date().toISOString().slice(0, 10);
+  return todayStr();
 }
 
 router.get('/', (req, res) => {

@@ -3,23 +3,20 @@ import { weeklyReportApi } from '../api';
 import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
 import DatePicker from '../components/DatePicker';
+import { todayStr, toDateStr } from '../utils/date';
 
 function getWeekStart(date: string): string {
   const d = new Date(date);
   const day = d.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
-  return d.toISOString().slice(0, 10);
+  return toDateStr(d);
 }
 
 function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr);
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
-}
-
-function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
+  return toDateStr(d);
 }
 
 const weekdayNames = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'];

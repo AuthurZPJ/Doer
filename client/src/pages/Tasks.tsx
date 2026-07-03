@@ -5,10 +5,7 @@ import EmptyState from '../components/EmptyState';
 import TagInput from '../components/TagInput';
 import ConfirmButton from '../components/ConfirmButton';
 import DatePicker from '../components/DatePicker';
-
-function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+import { todayStr } from '../utils/date';
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });

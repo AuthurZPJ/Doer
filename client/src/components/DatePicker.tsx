@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { todayStr } from '../utils/date';
 
 interface DatePickerProps {
   value: string;
@@ -31,7 +32,7 @@ export default function DatePicker({ value, onChange, className = '' }: DatePick
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const today = todayStr();
 
   const days: (string | null)[] = [];
   const firstDay = new Date(viewYear, viewMonth, 1);
@@ -78,7 +79,7 @@ export default function DatePicker({ value, onChange, className = '' }: DatePick
             {days.map((d, i) => {
               if (!d) return <div key={i} />;
               const isSelected = d === value;
-              const isToday = d === todayStr;
+              const isToday = d === today;
               return (
                 <button
                   key={i}

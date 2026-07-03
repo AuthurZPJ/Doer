@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getDb } from '../db/index.js';
+import { todayStr, toDateStr } from '../utils/date.js';
 
 const router = Router();
 
@@ -8,13 +9,13 @@ function getWeekStart(date: string): string {
   const day = d.getDay();
   const diff = day === 0 ? -6 : 1 - day;
   d.setDate(d.getDate() + diff);
-  return d.toISOString().slice(0, 10);
+  return toDateStr(d);
 }
 
 function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr);
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  return toDateStr(d);
 }
 
 interface SubtaskNode {
@@ -50,7 +51,7 @@ function buildSubtaskTree(subtasks: any[]): SubtaskNode[] {
 }
 
 router.get('/', (req, res) => {
-  const weekStartParam = (req.query.week_start as string) || getWeekStart(new Date().toISOString().slice(0, 10));
+  const weekStartParam = (req.query.week_start as string) || getWeekStart(todayStr());
   const weekStart = getWeekStart(weekStartParam);
   const weekEnd = addDays(weekStart, 6);
 

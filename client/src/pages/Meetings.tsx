@@ -5,10 +5,7 @@ import EmptyState from '../components/EmptyState';
 import TagInput from '../components/TagInput';
 import ConfirmButton from '../components/ConfirmButton';
 import DatePicker from '../components/DatePicker';
-
-function todayStr(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+import { todayStr } from '../utils/date';
 
 export default function Meetings() {
   const [meetings, setMeetings] = useState<any[]>([]);
