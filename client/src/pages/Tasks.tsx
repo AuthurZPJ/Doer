@@ -435,9 +435,9 @@ export default function Tasks() {
           {inProgress.length === 0 ? (
             <EmptyState message="没有正在做的任务" />
           ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow divide-y divide-gray-100 dark:divide-gray-700 mb-6">
+            <div className="space-y-3 mb-6">
               {inProgress.map(task => (
-                <div key={task.id} className="p-4">{renderInProgressTask(task)}</div>
+                <div key={task.id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-l-4 border-blue-400">{renderInProgressTask(task)}</div>
               ))}
             </div>
           )}
@@ -454,9 +454,9 @@ export default function Tasks() {
           {completed.length === 0 ? (
             <EmptyState message="当天没有已完成的任务" onRetry={load} />
           ) : (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow divide-y divide-gray-100 dark:divide-gray-700">
+            <div className="space-y-3">
               {completed.map(task => (
-                <div key={task.id} className="p-4">{renderCompletedTask(task)}</div>
+                <div key={task.id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-l-4 border-green-400">{renderCompletedTask(task)}</div>
               ))}
             </div>
           )}
