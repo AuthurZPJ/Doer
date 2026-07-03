@@ -32,33 +32,16 @@ interface SubtaskNode {
 
 function renderSubtaskTree(nodes: SubtaskNode[]) {
   return nodes.map(node => (
-    <li key={node.id}>
-      <div className="flex items-start gap-2">
-        <span className="text-gray-300">└</span>
-        <span className="text-xs text-gray-500">{node.content}</span>
+    <div key={node.id}>
+      <div className="flex items-center gap-2 py-0.5">
+        <span className="text-xs text-gray-500 dark:text-gray-400">{node.content}</span>
       </div>
       {node.children && node.children.length > 0 && (
-        <ul className="ml-3 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
+        <div className="ml-3 pl-3 border-l border-gray-200 dark:border-gray-600 space-y-0.5">
           {renderSubtaskTree(node.children)}
-        </ul>
+        </div>
       )}
-    </li>
-  ));
-}
-
-function renderSummarySubtasks(nodes: SubtaskNode[]) {
-  return nodes.map(node => (
-    <li key={node.id}>
-      <div className="flex items-start gap-2 ml-3">
-        <span className="text-gray-300">·</span>
-        <span className="text-xs text-gray-400">{node.content}</span>
-      </div>
-      {node.children && node.children.length > 0 && (
-        <ul className="ml-4 space-y-0.5 mt-0.5">
-          {renderSummarySubtasks(node.children)}
-        </ul>
-      )}
-    </li>
+    </div>
   ));
 }
 
@@ -89,6 +72,54 @@ function copyToClipboard(text: string): boolean {
   try { ok = document.execCommand('copy'); } catch {}
   document.body.removeChild(ta);
   return ok;
+}
+
+function TagBadge({ tags }: { tags: string }) {
+  if (!tags) return null;
+  return (
+    <>
+      {tags.split(',').map(tag => (
+        <span key={tag} className="inline-block bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-xs px-1.5 py-0.5 rounded">{tag.trim()}</span>
+      ))}
+    </>
+  );
+}
+
+function reportToMarkdown(r: any, start: string, end: string): string {
+  const hasDayContent = (day: any) => day.tasks.length > 0 || (day.standalone_groups?.length || 0) > 0;
+  let md = `# 周报 ${start} ~ ${end}\n\n`;
+  if (r.subtask_stats) {
+    md += `> 子任务: ${r.subtask_stats.total_done}/${r.subtask_stats.total_subtasks} 已完成\n\n`;
+  }
+  md += `## 每日完成\n\n`;
+  for (const day of r.days) {
+    if (!hasDayContent(day)) continue;
+    const weekday = weekdayNames[new Date(day.date).getDay() === 0 ? 6 : new Date(day.date).getDay() - 1];
+    md += `### ${day.date} ${weekday}\n`;
+    for (const task of day.tasks) {
+      const countStr = task.total_subtasks > 0 ? ` (${task.done_subtasks}/${task.total_subtasks})` : '';
+      md += `- ${task.content}${countStr}${task.tags ? ` [${task.tags}]` : ''}\n`;
+      md += flattenToMarkdown(task.subtask_tree || [], 1);
+    }
+    for (const g of (day.standalone_groups || [])) {
+      const countStr = g.total_subtasks > 0 ? ` (${g.done_subtasks}/${g.total_subtasks})` : '';
+      md += `- ${g.parent_task_content} (进行中任务的已完成子项)${countStr}${g.parent_tags ? ` [${g.parent_tags}]` : ''}\n`;
+      md += flattenToMarkdown(g.subtask_tree || [], 1);
+    }
+    md += '\n';
+  }
+  md += `## 按标签汇总\n\n`;
+  for (const [tag, items] of Object.entries(r.summary_by_tag)) {
+    md += `### ${tag}\n`;
+    for (const item of items as any[]) {
+      const countStr = item.total_subtasks > 0 ? ` (${item.done_subtasks}/${item.total_subtasks})` : '';
+      const label = item.is_in_progress_parent ? ' (进行中任务的已完成子项)' : '';
+      md += `- ${item.content}${countStr}${label}\n`;
+      md += flattenToMarkdown(item.subtask_tree || [], 1);
+    }
+    md += '\n';
+  }
+  return md;
 }
 
 export default function WeeklyReport() {
@@ -122,146 +153,61 @@ export default function WeeklyReport() {
   };
 
   const weekEnd = addDays(weekStart, 6);
-  const totalTasks = report?.days?.reduce((sum: number, d: any) => sum + d.tasks.length + (d.standalone_groups?.length || 0), 0) || 0;
-
   const hasDayContent = (day: any) => day.tasks.length > 0 || (day.standalone_groups?.length || 0) > 0;
+  const activeDays = report?.days?.filter(hasDayContent) || [];
+  const totalTasks = activeDays.reduce((sum: number, d: any) => sum + d.tasks.length + (d.standalone_groups?.length || 0), 0) || 0;
 
   const handleExport = () => {
     if (!report) return;
-    let md = `# 周报 ${weekStart} ~ ${weekEnd}\n\n`;
-    if (report.subtask_stats) {
-      md += `> 子任务: ${report.subtask_stats.total_done}/${report.subtask_stats.total_subtasks} 已完成\n\n`;
-    }
-    md += `## 每日完成\n\n`;
-    for (const day of report.days) {
-      if (!hasDayContent(day)) continue;
-      const weekday = weekdayNames[new Date(day.date).getDay() === 0 ? 6 : new Date(day.date).getDay() - 1];
-      md += `### ${day.date} ${weekday}\n`;
-      for (const task of day.tasks) {
-        const countStr = task.total_subtasks > 0 ? ` (${task.done_subtasks}/${task.total_subtasks})` : '';
-        md += `- ${task.content}${countStr}${task.tags ? ` [${task.tags}]` : ''}\n`;
-        md += flattenToMarkdown(task.subtask_tree || [], 1);
-      }
-      for (const g of (day.standalone_groups || [])) {
-        const countStr = g.total_subtasks > 0 ? ` (${g.done_subtasks}/${g.total_subtasks})` : '';
-        md += `- ${g.parent_task_content} (进行中任务的已完成子项)${countStr}${g.parent_tags ? ` [${g.parent_tags}]` : ''}\n`;
-        md += flattenToMarkdown(g.subtask_tree || [], 1);
-      }
-      md += '\n';
-    }
-    md += `## 按标签汇总\n\n`;
-    for (const [tag, items] of Object.entries(report.summary_by_tag)) {
-      md += `### ${tag}\n`;
-      for (const item of items as any[]) {
-        const countStr = item.total_subtasks > 0 ? ` (${item.done_subtasks}/${item.total_subtasks})` : '';
-        const label = item.is_in_progress_parent ? ' (进行中任务的已完成子项)' : '';
-        md += `- ${item.content}${countStr}${label}\n`;
-        md += flattenToMarkdown(item.subtask_tree || [], 1);
-      }
-      md += '\n';
-    }
+    const md = reportToMarkdown(report, weekStart, weekEnd);
     const ok = copyToClipboard(md);
     showToast(ok ? '已复制到剪贴板' : '复制失败，请手动复制', ok ? 'success' : 'error');
   };
 
-  const reportToMarkdown = (r: any, start: string, end: string): string => {
-    let md = `# 周报 ${start} ~ ${end}\n\n`;
-    if (r.subtask_stats) {
-      md += `> 子任务: ${r.subtask_stats.total_done}/${r.subtask_stats.total_subtasks} 已完成\n\n`;
-    }
-    md += `## 每日完成\n\n`;
-    for (const day of r.days) {
-      if (!hasDayContent(day)) continue;
-      const weekday = weekdayNames[new Date(day.date).getDay() === 0 ? 6 : new Date(day.date).getDay() - 1];
-      md += `### ${day.date} ${weekday}\n`;
-      for (const task of day.tasks) {
-        const countStr = task.total_subtasks > 0 ? ` (${task.done_subtasks}/${task.total_subtasks})` : '';
-        md += `- ${task.content}${countStr}${task.tags ? ` [${task.tags}]` : ''}\n`;
-        md += flattenToMarkdown(task.subtask_tree || [], 1);
+  const exportMultiWeek = async (from: string, to: string) => {
+    setExporting(true);
+    try {
+      let allMd = '';
+      let current = from;
+      while (current <= to) {
+        const r = await weeklyReportApi.get(current);
+        if (r.days.some((d: any) => hasDayContent(d))) {
+          allMd += reportToMarkdown(r, current, addDays(current, 6)) + '\n---\n\n';
+        }
+        current = addDays(current, 7);
       }
-      for (const g of (day.standalone_groups || [])) {
-        const countStr = g.total_subtasks > 0 ? ` (${g.done_subtasks}/${g.total_subtasks})` : '';
-        md += `- ${g.parent_task_content} (进行中任务的已完成子项)${countStr}${g.parent_tags ? ` [${g.parent_tags}]` : ''}\n`;
-        md += flattenToMarkdown(g.subtask_tree || [], 1);
+      if (!allMd) {
+        showToast('该区间暂无记录', 'error');
+      } else {
+        const ok = copyToClipboard(allMd.trimEnd());
+        showToast(ok ? '已复制到剪贴板' : '复制失败', ok ? 'success' : 'error');
+        setShowExport(false);
       }
-      md += '\n';
+    } catch {
+      showToast('导出失败', 'error');
+    } finally {
+      setExporting(false);
     }
-    md += `## 按标签汇总\n\n`;
-    for (const [tag, items] of Object.entries(r.summary_by_tag)) {
-      md += `### ${tag}\n`;
-      for (const item of items as any[]) {
-        const countStr = item.total_subtasks > 0 ? ` (${item.done_subtasks}/${item.total_subtasks})` : '';
-        const label = item.is_in_progress_parent ? ' (进行中任务的已完成子项)' : '';
-        md += `- ${item.content}${countStr}${label}\n`;
-        md += flattenToMarkdown(item.subtask_tree || [], 1);
-      }
-      md += '\n';
-    }
-    return md;
   };
 
-  const handleExportRange = async () => {
+  const handleExportRange = () => {
     const fromWeek = getWeekStart(exportFrom);
     const toWeek = getWeekStart(exportTo);
     if (fromWeek > toWeek) {
       showToast('起始周不能晚于结束周', 'error');
       return;
     }
-    setExporting(true);
-    try {
-      let allMd = '';
-      let current = fromWeek;
-      while (current <= toWeek) {
-        const r = await weeklyReportApi.get(current);
-        if (r.days.some((d: any) => hasDayContent(d))) {
-          allMd += reportToMarkdown(r, current, addDays(current, 6)) + '\n---\n\n';
-        }
-        current = addDays(current, 7);
-      }
-      if (!allMd) {
-        showToast('该区间暂无记录', 'error');
-      } else {
-        const ok = copyToClipboard(allMd.trimEnd());
-        showToast(ok ? '已复制到剪贴板' : '复制失败', ok ? 'success' : 'error');
-        setShowExport(false);
-      }
-    } catch {
-      showToast('导出失败', 'error');
-    } finally {
-      setExporting(false);
-    }
+    exportMultiWeek(fromWeek, toWeek);
   };
 
-  const handleExportFromToThis = async () => {
+  const handleExportFromToThis = () => {
     const fromWeek = getWeekStart(exportFrom);
     const thisWeek = getWeekStart(todayStr());
     if (fromWeek > thisWeek) {
       showToast('起始周不能晚于本周', 'error');
       return;
     }
-    setExporting(true);
-    try {
-      let allMd = '';
-      let current = fromWeek;
-      while (current <= thisWeek) {
-        const r = await weeklyReportApi.get(current);
-        if (r.days.some((d: any) => hasDayContent(d))) {
-          allMd += reportToMarkdown(r, current, addDays(current, 6)) + '\n---\n\n';
-        }
-        current = addDays(current, 7);
-      }
-      if (!allMd) {
-        showToast('该区间暂无记录', 'error');
-      } else {
-        const ok = copyToClipboard(allMd.trimEnd());
-        showToast(ok ? '已复制到剪贴板' : '复制失败', ok ? 'success' : 'error');
-        setShowExport(false);
-      }
-    } catch {
-      showToast('导出失败', 'error');
-    } finally {
-      setExporting(false);
-    }
+    exportMultiWeek(fromWeek, thisWeek);
   };
 
   return (
@@ -288,7 +234,7 @@ export default function WeeklyReport() {
             >
               导出当前周 ({weekStart} ~ {weekEnd})
             </button>
-            <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">
+            <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg flex-wrap">
               <span className="text-sm text-gray-600 dark:text-gray-400">导出周区间:</span>
               <DatePicker value={exportFrom} onChange={(v) => setExportFrom(getWeekStart(v))} />
               <span className="text-gray-400">~</span>
@@ -302,7 +248,7 @@ export default function WeeklyReport() {
                 {exporting ? '导出中...' : '导出'}
               </button>
             </div>
-            <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">
+            <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg flex-wrap">
               <span className="text-sm text-gray-600 dark:text-gray-400">从指定周至本周:</span>
               <DatePicker value={exportFrom} onChange={(v) => setExportFrom(getWeekStart(v))} />
               <span className="text-xs text-gray-400">{exportFrom} ~ {addDays(getWeekStart(todayStr()), 6)}</span>
@@ -326,87 +272,89 @@ export default function WeeklyReport() {
         <>
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-4 transition-base">
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              本周共完成 {totalTasks} 项工作
-              {report.subtask_stats && (
+              本周共完成 <span className="font-semibold text-gray-700 dark:text-gray-200">{totalTasks}</span> 项工作
+              {report.subtask_stats && report.subtask_stats.total_subtasks > 0 && (
                 <span className="ml-2 text-gray-400">· 子任务 {report.subtask_stats.total_done}/{report.subtask_stats.total_subtasks} 已完成</span>
               )}
             </p>
           </div>
 
-          <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">每日完成</h2>
-          <div className="space-y-3 mb-6">
-            {report.days.map((day: any, i: number) => (
-              <div key={day.date} className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 transition-base">
-                <p className="text-sm font-medium mb-2 dark:text-gray-100">
-                  {day.date} {weekdayNames[i]}
-                  <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">{day.tasks.length + (day.standalone_groups?.length || 0)} 项</span>
-                </p>
-                {!hasDayContent(day) ? (
-                  <p className="text-sm text-gray-300 dark:text-gray-600">无</p>
-                ) : (
+          <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 tracking-wide mb-2">每日完成</h2>
+          <div className="space-y-3 mb-6 slide-up">
+            {activeDays.map((day: any) => {
+              const weekday = weekdayNames[new Date(day.date).getDay() === 0 ? 6 : new Date(day.date).getDay() - 1];
+              const dayCount = day.tasks.length + (day.standalone_groups?.length || 0);
+              return (
+                <div key={day.date} className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 transition-base">
+                  <p className="text-sm font-medium mb-3 dark:text-gray-100 flex items-center gap-2">
+                    <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
+                    {day.date} {weekday}
+                    <span className="text-xs text-gray-400 dark:text-gray-500 font-normal">{dayCount} 项</span>
+                  </p>
                   <div className="space-y-2">
                     {day.tasks.map((t: any) => (
-                      <div key={t.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-md p-3 border-l-4 border-green-400">
-                        <div className="flex items-start gap-2">
-                          <span className="text-gray-400 dark:text-gray-500">•</span>
+                      <div key={t.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 border-l-4 border-green-400 transition-base">
+                        <div className="flex items-start gap-2 flex-wrap">
                           <span className="font-medium dark:text-gray-100">{t.content}</span>
                           {t.total_subtasks > 0 && (
                             <span className="text-xs text-gray-400 dark:text-gray-500">{t.done_subtasks}/{t.total_subtasks} 已完成</span>
                           )}
-                          {t.tags && <span className="text-xs text-blue-500 dark:text-blue-400">[{t.tags}]</span>}
+                          {t.tags && <TagBadge tags={t.tags} />}
                         </div>
                         {t.subtask_tree && t.subtask_tree.length > 0 && (
-                          <ul className="ml-4 border-l border-gray-200 dark:border-gray-600 pl-3 space-y-0.5 mt-1">
+                          <div className="mt-2 ml-3 pl-3 border-l border-gray-200 dark:border-gray-600 space-y-0.5">
                             {renderSubtaskTree(t.subtask_tree)}
-                          </ul>
+                          </div>
                         )}
                       </div>
                     ))}
                     {(day.standalone_groups || []).map((g: any) => (
-                      <div key={`grp-${g.parent_task_id}`} className="bg-yellow-50 dark:bg-yellow-900/20 rounded-md p-3 border-l-4 border-yellow-400">
-                        <p className="text-xs font-medium text-yellow-600 dark:text-yellow-400 mb-1">进行中任务的已完成子项</p>
-                        <div className="flex items-start gap-2">
-                          <span className="text-gray-400 dark:text-gray-500">•</span>
+                      <div key={`grp-${g.parent_task_id}`} className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 border-l-4 border-yellow-400 transition-base">
+                        <p className="text-xs font-medium text-yellow-600 dark:text-yellow-400 mb-1">⚠ 进行中任务的已完成子项</p>
+                        <div className="flex items-start gap-2 flex-wrap">
                           <span className="text-gray-600 dark:text-gray-400 font-medium">{g.parent_task_content}</span>
                           {g.total_subtasks > 0 && (
                             <span className="text-xs text-gray-400 dark:text-gray-500">{g.done_subtasks}/{g.total_subtasks} 已完成</span>
                           )}
-                          {g.parent_tags && <span className="text-xs text-blue-500 dark:text-blue-400">[{g.parent_tags}]</span>}
+                          {g.parent_tags && <TagBadge tags={g.parent_tags} />}
                         </div>
                         {g.subtask_tree && g.subtask_tree.length > 0 && (
-                          <ul className="ml-4 border-l border-gray-200 dark:border-gray-600 pl-3 space-y-0.5 mt-1">
+                          <div className="mt-2 ml-3 pl-3 border-l border-gray-200 dark:border-gray-600 space-y-0.5">
                             {renderSubtaskTree(g.subtask_tree)}
-                          </ul>
+                          </div>
                         )}
                       </div>
                     ))}
                   </div>
-                )}
-              </div>
-            ))}
+                </div>
+              );
+            })}
           </div>
 
-          <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">按标签汇总</h2>
-          <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 transition-base">
+          <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 tracking-wide mb-2">按标签汇总</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 transition-base space-y-4">
             {Object.entries(report.summary_by_tag).map(([tag, items]) => (
-              <div key={tag} className="mb-4 last:mb-0">
-                <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">{tag}</p>
-                <div className="space-y-2 ml-2">
+              <div key={tag}>
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="inline-block bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-sm font-medium px-2 py-0.5 rounded">{tag}</span>
+                  <span className="text-xs text-gray-400">{(items as any[]).length} 项</span>
+                </div>
+                <div className="space-y-2 ml-1">
                   {(items as any[]).map((item, i) => (
-                    <div key={i} className="bg-gray-50 dark:bg-gray-700/50 rounded-md p-2 border-l-4 border-blue-400">
+                    <div key={i} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 border-l-4 border-blue-400 transition-base">
                       <div className="flex items-start gap-2 flex-wrap">
-                        <span className="text-gray-700 dark:text-gray-200 font-medium">{item.content}</span>
+                        <span className="text-gray-700 dark:text-gray-200 font-medium text-sm">{item.content}</span>
                         {item.total_subtasks > 0 && (
                           <span className="text-xs text-gray-400 dark:text-gray-500">{item.done_subtasks}/{item.total_subtasks} 已完成</span>
                         )}
                         {item.is_in_progress_parent && (
-                          <span className="text-xs text-yellow-600 dark:text-yellow-400">进行中任务的已完成子项</span>
+                          <span className="text-xs text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-900/20 px-1.5 py-0.5 rounded">进行中</span>
                         )}
                       </div>
                       {item.subtask_tree && item.subtask_tree.length > 0 && (
-                        <ul className="ml-2 space-y-0.5 mt-1">
-                          {renderSummarySubtasks(item.subtask_tree)}
-                        </ul>
+                        <div className="mt-1.5 ml-3 pl-3 border-l border-gray-200 dark:border-gray-600 space-y-0.5">
+                          {renderSubtaskTree(item.subtask_tree)}
+                        </div>
                       )}
                     </div>
                   ))}
