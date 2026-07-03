@@ -10,7 +10,7 @@ interface ConfirmButtonProps {
 export default function ConfirmButton({
   onConfirm,
   children = '删除',
-  className = 'text-red-500 hover:text-red-700 text-sm',
+  className = 'text-red-500 dark:text-red-400 hover:text-red-700 text-sm',
 }: ConfirmButtonProps) {
   const [confirming, setConfirming] = useState(false);
 
@@ -26,13 +26,13 @@ export default function ConfirmButton({
               showToast('操作失败', 'error');
             }
           }}
-          className="text-red-600 hover:text-red-800 text-sm font-medium"
+          className="text-red-600 dark:text-red-400 hover:text-red-800 text-sm font-medium"
         >
           确认
         </button>
         <button
           onClick={() => setConfirming(false)}
-          className="text-gray-500 hover:text-gray-700 text-sm"
+          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 text-sm"
         >
           取消
         </button>

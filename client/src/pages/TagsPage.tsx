@@ -77,7 +77,7 @@ export default function TagsPage() {
     <div className="p-6 max-w-3xl">
       <h1 className="text-2xl font-bold mb-6">标签管理</h1>
 
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
         <div className="flex flex-col gap-3">
           <div className="flex gap-3 items-center">
             <input
@@ -86,7 +86,7 @@ export default function TagsPage() {
               onChange={e => setNewName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
               placeholder="标签名称"
-              className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm"
+              className="flex-1 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
             />
             <div className="flex gap-1">
               {presetColors.map(color => (
@@ -109,11 +109,11 @@ export default function TagsPage() {
       </div>
 
       {loading ? (
-        <div className="text-gray-400">加载中...</div>
+        <div className="text-gray-400 dark:text-gray-500">加载中...</div>
       ) : tags.length === 0 ? (
         <EmptyState message="还没有标签，创建一个吧" />
       ) : (
-        <div className="bg-white rounded-lg shadow divide-y divide-gray-100">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow divide-y divide-gray-100 dark:divide-gray-700">
           {tags.map(tag => (
             <div key={tag.id} className="p-4 flex items-center justify-between">
               {editingId === tag.id ? (
@@ -124,7 +124,7 @@ export default function TagsPage() {
                     onChange={e => setEditName(e.target.value)}
                     onKeyDown={e => { if (e.key === 'Enter') handleSaveEdit(); }
                     }
-                    className="border border-gray-300 rounded px-2 py-1 text-sm flex-1"
+                    className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm flex-1"
                   />
                   <div className="flex gap-1">
                     {presetColors.map(color => (
@@ -136,8 +136,8 @@ export default function TagsPage() {
                       />
                     ))}
                   </div>
-                  <button onClick={handleSaveEdit} className="text-sm text-blue-600 hover:text-blue-800">保存</button>
-                  <button onClick={() => setEditingId(null)} className="text-sm text-gray-500 hover:text-gray-700">取消</button>
+                  <button onClick={handleSaveEdit} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800">保存</button>
+                  <button onClick={() => setEditingId(null)} className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700">取消</button>
                 </div>
               ) : (
                 <>
@@ -149,7 +149,7 @@ export default function TagsPage() {
                     <span className="text-sm">{tag.name}</span>
                   </div>
                   <div className="flex gap-3">
-                    <button onClick={() => handleEdit(tag)} className="text-sm text-gray-500 hover:text-gray-700">编辑</button>
+                    <button onClick={() => handleEdit(tag)} className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700">编辑</button>
                     <ConfirmButton onConfirm={() => handleDelete(tag.id)} />
                   </div>
                 </>

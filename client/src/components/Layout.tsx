@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { backupApi } from '../api';
 import { showToast } from './Toast';
@@ -15,6 +16,20 @@ const navItems = [
 ];
 
 export default function Layout() {
+  const [dark, setDark] = useState(document.documentElement.classList.contains('dark'));
+
+  const toggleTheme = () => {
+    const next = !dark;
+    setDark(next);
+    if (next) {
+      document.documentElement.classList.add('dark');
+      localStorage.theme = 'dark';
+    } else {
+      document.documentElement.classList.remove('dark');
+      localStorage.theme = 'light';
+    }
+  };
+
   const handleBackup = async () => {
     try {
       const result = await backupApi.create();
@@ -26,8 +41,8 @@ export default function Layout() {
 
   return (
     <div className="flex h-screen">
-      <aside className="w-56 bg-gray-800 text-white flex flex-col shrink-0">
-        <div className="px-6 py-4 text-xl font-bold border-b border-gray-700">
+      <aside className="w-56 bg-gray-800 dark:bg-gray-950 text-white flex flex-col shrink-0">
+        <div className="px-6 py-4 text-xl font-bold border-b border-gray-700 dark:border-gray-800">
           Doer
         </div>
         <nav className="flex-1 py-2">
@@ -39,8 +54,8 @@ export default function Layout() {
               className={({ isActive }) =>
                 `block px-6 py-2.5 text-sm transition-colors ${
                   isActive
-                    ? 'bg-gray-700 text-white border-l-4 border-blue-400'
-                    : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                    ? 'bg-gray-700 dark:bg-gray-800 text-white border-l-4 border-blue-400'
+                    : 'text-gray-300 dark:text-gray-400 hover:bg-gray-700 dark:hover:bg-gray-800 hover:text-white'
                 }`
               }
             >
@@ -48,16 +63,22 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
-        <div className="p-4 border-t border-gray-700">
+        <div className="p-4 border-t border-gray-700 dark:border-gray-800 flex flex-col gap-2">
+          <button
+            onClick={toggleTheme}
+            className="w-full px-4 py-2 bg-gray-700 dark:bg-gray-800 hover:bg-gray-600 dark:hover:bg-gray-700 rounded text-sm text-gray-200"
+          >
+            {dark ? '☀️ 浅色' : '🌙 深色'}
+          </button>
           <button
             onClick={handleBackup}
-            className="w-full px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded text-sm text-gray-200"
+            className="w-full px-4 py-2 bg-gray-700 dark:bg-gray-800 hover:bg-gray-600 dark:hover:bg-gray-700 rounded text-sm text-gray-200"
           >
             数据备份
           </button>
         </div>
       </aside>
-      <main className="flex-1 overflow-auto bg-gray-50">
+      <main className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
         <Outlet />
       </main>
     </div>

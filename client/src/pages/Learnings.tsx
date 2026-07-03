@@ -66,21 +66,21 @@ export default function Learnings() {
       </div>
 
       {showForm && (
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
           <div className="flex flex-col gap-3">
             <input
               type="text"
               value={title}
               onChange={e => setTitle(e.target.value)}
               placeholder="标题"
-              className="border border-gray-300 rounded px-3 py-2 text-sm"
+              className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
             />
             <textarea
               value={content}
               onChange={e => setContent(e.target.value)}
               placeholder="内容"
               rows={5}
-              className="border border-gray-300 rounded px-3 py-2 text-sm"
+              className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
             />
             <TagInput value={tags} onChange={setTags} />
             <button
@@ -94,13 +94,13 @@ export default function Learnings() {
       )}
 
       {loading ? (
-        <div className="text-gray-400">加载中...</div>
+        <div className="text-gray-400 dark:text-gray-500">加载中...</div>
       ) : learnings.length === 0 ? (
         <EmptyState message="暂无学习记录" onRetry={load} />
       ) : (
         <div className="space-y-2">
           {learnings.map(l => (
-            <div key={l.id} className="bg-white rounded-lg shadow">
+            <div key={l.id} className="bg-white dark:bg-gray-800 rounded-lg shadow">
               <button
                 onClick={() => setExpandedId(expandedId === l.id ? null : l.id)}
                 className="block w-full text-left p-4"
@@ -108,15 +108,15 @@ export default function Learnings() {
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-medium">{l.title}</span>
                   <div className="flex items-center gap-3">
-                    {l.tags && <span className="text-xs text-blue-500">{l.tags}</span>}
-                    <span className="text-xs text-gray-400">{new Date(l.created_at).toLocaleDateString()}</span>
-                    <span className="text-gray-400">{expandedId === l.id ? '▾' : '▸'}</span>
+                    {l.tags && <span className="text-xs text-blue-500 dark:text-blue-400">{l.tags}</span>}
+                    <span className="text-xs text-gray-400 dark:text-gray-500">{new Date(l.created_at).toLocaleDateString()}</span>
+                    <span className="text-gray-400 dark:text-gray-500">{expandedId === l.id ? '▾' : '▸'}</span>
                   </div>
                 </div>
               </button>
               {expandedId === l.id && (
                 <div className="px-4 pb-4">
-                  <div className="text-sm whitespace-pre-wrap text-gray-600 border-t border-gray-100 pt-3">
+                  <div className="text-sm whitespace-pre-wrap text-gray-600 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-3">
                     {l.content || '（无内容）'}
                   </div>
                   <div className="mt-3">

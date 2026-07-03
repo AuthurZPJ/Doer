@@ -85,7 +85,7 @@ export default function Issues() {
     <select
       value={issue.task_id ?? ''}
       onChange={e => handleChangeTask(issue.id, e.target.value === '' ? '' : Number(e.target.value))}
-      className="text-xs border border-gray-300 rounded px-1 py-0.5 text-gray-600"
+      className="text-xs border border-gray-300 dark:border-gray-600 rounded px-1 py-0.5 text-gray-600 dark:text-gray-400"
     >
       <option value="">关联任务</option>
       {tasks.map(t => (
@@ -97,16 +97,16 @@ export default function Issues() {
   const renderIssue = (issue: any, isResolved: boolean) => {
     const linkedTask = issue.task_id ? taskMap.get(issue.task_id) : null;
     return (
-      <div key={issue.id} className="bg-white rounded-lg shadow p-4 flex items-start justify-between">
+      <div key={issue.id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex items-start justify-between">
         <div className="min-w-0">
-          <p className={`text-sm ${isResolved ? 'text-gray-400 line-through' : ''}`}>{issue.content}</p>
+          <p className={`text-sm ${isResolved ? 'text-gray-400 dark:text-gray-500 line-through' : 'dark:text-gray-100'}`}>{issue.content}</p>
           {issue.task_id && (
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               关联任务: {linkedTask ? linkedTask.content : `任务#${issue.task_id}`}
             </p>
           )}
-          <div className="flex gap-3 mt-1 text-xs text-gray-400">
-            {issue.tags && <span className="text-blue-500">{issue.tags}</span>}
+          <div className="flex gap-3 mt-1 text-xs text-gray-400 dark:text-gray-500">
+            {issue.tags && <span className="text-blue-500 dark:text-blue-400">{issue.tags}</span>}
             <span>{new Date(issue.created_at).toLocaleDateString()}</span>
           </div>
         </div>
@@ -115,7 +115,7 @@ export default function Issues() {
           {!isResolved && (
             <button
               onClick={() => handleResolve(issue.id)}
-              className="text-sm text-green-600 hover:text-green-800"
+              className="text-sm text-green-600 dark:text-green-400 hover:text-green-800"
             >
               解决
             </button>
@@ -130,7 +130,7 @@ export default function Issues() {
     <div className="p-6 max-w-3xl">
       <h1 className="text-2xl font-bold mb-6">当前问题</h1>
 
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
         <div className="flex flex-col gap-3">
           <input
             type="text"
@@ -138,13 +138,13 @@ export default function Issues() {
             onChange={e => setContent(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
             placeholder="遇到了什么问题？"
-            className="border border-gray-300 rounded px-3 py-2 text-sm"
+            className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
           />
           <TagInput value={tags} onChange={setTags} />
           <select
             value={taskId}
             onChange={e => setTaskId(e.target.value === '' ? '' : Number(e.target.value))}
-            className="border border-gray-300 rounded px-3 py-2 text-sm text-gray-600"
+            className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm text-gray-600 dark:text-gray-400"
           >
             <option value="">不关联任务</option>
             {tasks.map(t => (
@@ -161,10 +161,10 @@ export default function Issues() {
       </div>
 
       {loading ? (
-        <div className="text-gray-400">加载中...</div>
+        <div className="text-gray-400 dark:text-gray-500">加载中...</div>
       ) : (
         <>
-          <h2 className="text-sm font-semibold text-gray-600 mb-2">未解决 ({openIssues.length})</h2>
+          <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">未解决 ({openIssues.length})</h2>
           {openIssues.length === 0 ? (
             <EmptyState message="没有未解决的问题" />
           ) : (
@@ -175,7 +175,7 @@ export default function Issues() {
 
           <button
             onClick={() => setShowResolved(!showResolved)}
-            className="text-sm text-gray-500 hover:text-gray-700 mb-2"
+            className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 mb-2"
           >
             已解决 ({resolvedIssues.length}) {showResolved ? '▾' : '▸'}
           </button>

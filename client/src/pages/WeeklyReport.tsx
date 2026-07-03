@@ -165,28 +165,28 @@ export default function WeeklyReport() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">周报</h1>
         <div className="flex items-center gap-2">
-          <button onClick={handlePrevWeek} className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50">‹</button>
+          <button onClick={handlePrevWeek} className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm hover:bg-gray-50 dark:hover:bg-gray-700">‹</button>
           <input
             type="date"
             value={weekStart}
             onChange={handleWeekPicker}
-            className="border border-gray-300 rounded px-2 py-1 text-sm text-gray-600"
+            className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm text-gray-600 dark:text-gray-400"
           />
-          <span className="text-sm text-gray-500">{weekStart} ~ {weekEnd}</span>
-          <button onClick={handleNextWeek} className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50">›</button>
-          <button onClick={handleThisWeek} className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50">本周</button>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{weekStart} ~ {weekEnd}</span>
+          <button onClick={handleNextWeek} className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm hover:bg-gray-50 dark:hover:bg-gray-700">›</button>
+          <button onClick={handleThisWeek} className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm hover:bg-gray-50 dark:hover:bg-gray-700">本周</button>
           <button onClick={handleExport} className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">导出Markdown</button>
         </div>
       </div>
 
       {loading ? (
-        <div className="text-gray-400">加载中...</div>
+        <div className="text-gray-400 dark:text-gray-500">加载中...</div>
       ) : !report || totalTasks === 0 ? (
         <EmptyState message="本周暂无记录" onRetry={load} />
       ) : (
         <>
-          <div className="bg-white rounded-lg shadow p-4 mb-4">
-            <p className="text-sm text-gray-500">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               本周共完成 {totalTasks} 项工作
               {report.subtask_stats && (
                 <span className="ml-2 text-gray-400">· 子任务 {report.subtask_stats.total_done}/{report.subtask_stats.total_subtasks} 已完成</span>
@@ -194,30 +194,30 @@ export default function WeeklyReport() {
             </p>
           </div>
 
-          <h2 className="text-sm font-semibold text-gray-600 mb-2">每日完成</h2>
+          <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">每日完成</h2>
           <div className="space-y-3 mb-6">
             {report.days.map((day: any, i: number) => (
-              <div key={day.date} className="bg-white rounded-lg shadow p-4">
-                <p className="text-sm font-medium mb-2">
+              <div key={day.date} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+                <p className="text-sm font-medium mb-2 dark:text-gray-100">
                   {day.date} {weekdayNames[i]}
-                  <span className="ml-2 text-xs text-gray-400">{day.tasks.length + (day.standalone_groups?.length || 0)} 项</span>
+                  <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">{day.tasks.length + (day.standalone_groups?.length || 0)} 项</span>
                 </p>
                 {!hasDayContent(day) ? (
-                  <p className="text-sm text-gray-300">无</p>
+                  <p className="text-sm text-gray-300 dark:text-gray-600">无</p>
                 ) : (
-                  <ul className="text-sm space-y-1">
+                  <ul className="text-sm space-y-1 dark:text-gray-100">
                     {day.tasks.map((t: any) => (
                       <li key={t.id}>
                         <div className="flex items-start gap-2">
-                          <span className="text-gray-400">•</span>
+                          <span className="text-gray-400 dark:text-gray-500">•</span>
                           <span>{t.content}</span>
                           {t.total_subtasks > 0 && (
-                            <span className="text-xs text-gray-400">{t.done_subtasks}/{t.total_subtasks} 已完成</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500">{t.done_subtasks}/{t.total_subtasks} 已完成</span>
                           )}
-                          {t.tags && <span className="text-xs text-blue-500">[{t.tags}]</span>}
+                          {t.tags && <span className="text-xs text-blue-500 dark:text-blue-400">[{t.tags}]</span>}
                         </div>
                         {t.subtask_tree && t.subtask_tree.length > 0 && (
-                          <ul className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
+                          <ul className="ml-4 border-l border-gray-200 dark:border-gray-700 pl-3 space-y-0.5 mt-0.5">
                             {renderSubtaskTree(t.subtask_tree)}
                           </ul>
                         )}
@@ -225,17 +225,17 @@ export default function WeeklyReport() {
                     ))}
                     {(day.standalone_groups || []).map((g: any) => (
                       <li key={`grp-${g.parent_task_id}`} className="mt-2">
-                        <p className="text-xs font-medium text-yellow-600 mb-1">进行中任务的已完成子项</p>
+                        <p className="text-xs font-medium text-yellow-600 dark:text-yellow-400 mb-1">进行中任务的已完成子项</p>
                         <div className="flex items-start gap-2">
-                          <span className="text-gray-400">•</span>
-                          <span className="text-gray-600">{g.parent_task_content}</span>
+                          <span className="text-gray-400 dark:text-gray-500">•</span>
+                          <span className="text-gray-600 dark:text-gray-400">{g.parent_task_content}</span>
                           {g.total_subtasks > 0 && (
-                            <span className="text-xs text-gray-400">{g.done_subtasks}/{g.total_subtasks} 已完成</span>
+                            <span className="text-xs text-gray-400 dark:text-gray-500">{g.done_subtasks}/{g.total_subtasks} 已完成</span>
                           )}
-                          {g.parent_tags && <span className="text-xs text-blue-500">[{g.parent_tags}]</span>}
+                          {g.parent_tags && <span className="text-xs text-blue-500 dark:text-blue-400">[{g.parent_tags}]</span>}
                         </div>
                         {g.subtask_tree && g.subtask_tree.length > 0 && (
-                          <ul className="ml-4 border-l border-gray-200 pl-3 space-y-0.5 mt-0.5">
+                          <ul className="ml-4 border-l border-gray-200 dark:border-gray-700 pl-3 space-y-0.5 mt-0.5">
                             {renderSubtaskTree(g.subtask_tree)}
                           </ul>
                         )}
@@ -247,22 +247,22 @@ export default function WeeklyReport() {
             ))}
           </div>
 
-          <h2 className="text-sm font-semibold text-gray-600 mb-2">按标签汇总</h2>
-          <div className="bg-white rounded-lg shadow p-4">
+          <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">按标签汇总</h2>
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
             {Object.entries(report.summary_by_tag).map(([tag, items]) => (
               <div key={tag} className="mb-4 last:mb-0">
-                <p className="text-sm font-medium text-blue-600 mb-1">{tag}</p>
+                <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-1">{tag}</p>
                 <ul className="text-sm space-y-1 ml-4">
                   {(items as any[]).map((item, i) => (
                     <li key={i}>
                       <div className="flex items-start gap-2 flex-wrap">
-                        <span className="text-gray-400">•</span>
-                        <span className="text-gray-700">{item.content}</span>
+                        <span className="text-gray-400 dark:text-gray-500">•</span>
+                        <span className="text-gray-700 dark:text-gray-200">{item.content}</span>
                         {item.total_subtasks > 0 && (
-                          <span className="text-xs text-gray-400">{item.done_subtasks}/{item.total_subtasks} 已完成</span>
+                          <span className="text-xs text-gray-400 dark:text-gray-500">{item.done_subtasks}/{item.total_subtasks} 已完成</span>
                         )}
                         {item.is_in_progress_parent && (
-                          <span className="text-xs text-yellow-600">进行中任务的已完成子项</span>
+                          <span className="text-xs text-yellow-600 dark:text-yellow-400">进行中任务的已完成子项</span>
                         )}
                       </div>
                       {item.subtask_tree && item.subtask_tree.length > 0 && (

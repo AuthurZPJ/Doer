@@ -111,28 +111,28 @@ export default function Meetings() {
       </div>
 
       {showForm && (
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
           <div className="flex flex-col gap-3 max-w-2xl">
             <input
               type="text"
               value={title}
               onChange={e => setTitle(e.target.value)}
               placeholder="会议标题"
-              className="border border-gray-300 rounded px-3 py-2 text-sm"
+              className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
             />
             <textarea
               value={content}
               onChange={e => setContent(e.target.value)}
               placeholder="会议内容"
               rows={6}
-              className="border border-gray-300 rounded px-3 py-2 text-sm"
+              className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
             />
             <div className="flex gap-3 items-center">
               <input
                 type="date"
                 value={meetingDate}
                 onChange={e => setMeetingDate(e.target.value)}
-                className="border border-gray-300 rounded px-2 py-1 text-sm"
+                className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm"
               />
               <div className="flex-1"><TagInput value={tags} onChange={setTags} /></div>
             </div>
@@ -147,21 +147,21 @@ export default function Meetings() {
       )}
 
       {loading ? (
-        <div className="text-gray-400">加载中...</div>
+        <div className="text-gray-400 dark:text-gray-500">加载中...</div>
       ) : meetings.length === 0 ? (
         <EmptyState message="暂无会议记录" onRetry={load} />
       ) : (
         <div className="flex gap-4">
           <div className="w-64 shrink-0">
-            <div className="bg-white rounded-lg shadow divide-y divide-gray-100">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow divide-y divide-gray-100 dark:divide-gray-700">
               {meetings.map(m => (
                 <button
                   key={m.id}
                   onClick={() => { setSelectedId(m.id); setEditingId(null); }}
-                  className={`block w-full text-left p-3 hover:bg-gray-50 ${selectedId === m.id ? 'bg-blue-50' : ''}`}
+                  className={`block w-full text-left p-3 hover:bg-gray-50 dark:hover:bg-gray-700 ${selectedId === m.id ? 'bg-blue-50 dark:bg-blue-900' : ''}`}
                 >
                   <p className="text-sm font-medium truncate">{m.title}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{m.meeting_date}</p>
+                  <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{m.meeting_date}</p>
                 </button>
               ))}
             </div>
@@ -169,28 +169,28 @@ export default function Meetings() {
           <div className="flex-1">
             {selected ? (
               editingId === selected.id ? (
-                <div className="bg-white rounded-lg shadow p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                   <div className="flex flex-col gap-3">
                     <input
                       type="text"
                       value={editTitle}
                       onChange={e => setEditTitle(e.target.value)}
                       placeholder="会议标题"
-                      className="border border-gray-300 rounded px-3 py-2 text-sm"
+                      className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
                     />
                     <textarea
                       value={editContent}
                       onChange={e => setEditContent(e.target.value)}
                       placeholder="会议内容"
                       rows={6}
-                      className="border border-gray-300 rounded px-3 py-2 text-sm"
+                      className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
                     />
                     <div className="flex gap-3 items-center">
                       <input
                         type="date"
                         value={editDate}
                         onChange={e => setEditDate(e.target.value)}
-                        className="border border-gray-300 rounded px-2 py-1 text-sm"
+                        className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm"
                       />
                       <div className="flex-1"><TagInput value={editTags} onChange={setEditTags} /></div>
                     </div>
@@ -203,7 +203,7 @@ export default function Meetings() {
                       </button>
                       <button
                         onClick={cancelEdit}
-                        className="border border-gray-300 px-4 py-2 rounded text-sm hover:bg-gray-50"
+                        className="border border-gray-300 dark:border-gray-600 px-4 py-2 rounded text-sm hover:bg-gray-50 dark:hover:bg-gray-700"
                       >
                         取消
                       </button>
@@ -211,17 +211,17 @@ export default function Meetings() {
                   </div>
                 </div>
               ) : (
-                <div className="bg-white rounded-lg shadow p-6">
+                <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div>
                       <h2 className="text-lg font-semibold">{selected.title}</h2>
-                      <p className="text-sm text-gray-400 mt-1">{selected.meeting_date}</p>
-                      {selected.tags && <span className="text-xs text-blue-500">{selected.tags}</span>}
+                      <p className="text-sm text-gray-400 dark:text-gray-500 mt-1">{selected.meeting_date}</p>
+                      {selected.tags && <span className="text-xs text-blue-500 dark:text-blue-400">{selected.tags}</span>}
                     </div>
                     <div className="flex gap-2">
                       <button
                         onClick={startEdit}
-                        className="text-sm text-blue-600 hover:text-blue-800"
+                        className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800"
                       >
                         编辑
                       </button>

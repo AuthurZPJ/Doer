@@ -16,9 +16,9 @@ const priorityLabels: Record<string, string> = {
 };
 
 const priorityColors: Record<string, string> = {
-  high: 'border-l-red-500',
-  medium: 'border-l-yellow-500',
-  low: 'border-l-gray-300',
+  high: 'border-l-red-500 dark:border-l-red-500',
+  medium: 'border-l-yellow-500 dark:border-l-yellow-500',
+  low: 'border-l-gray-300 dark:border-l-gray-600',
 };
 
 function isOverdue(dueDate: string | null): boolean {
@@ -49,11 +49,11 @@ function groupTodos(todos: any[]): { key: string; label: string; color: string; 
     }
   }
   const meta = [
-    { key: 'overdue', label: '已逾期', color: 'text-red-600' },
+    { key: 'overdue', label: '已逾期', color: 'text-red-600 dark:text-red-400' },
     { key: 'today', label: '今天截止', color: 'text-orange-600' },
-    { key: 'soon', label: '即将截止', color: 'text-yellow-600' },
-    { key: 'none', label: '无截止日期', color: 'text-gray-500' },
-    { key: 'later', label: '以后', color: 'text-gray-500' },
+    { key: 'soon', label: '即将截止', color: 'text-yellow-600 dark:text-yellow-400' },
+    { key: 'none', label: '无截止日期', color: 'text-gray-500 dark:text-gray-400' },
+    { key: 'later', label: '以后', color: 'text-gray-500 dark:text-gray-400' },
   ];
   return meta
     .map(m => ({ ...m, items: sortByPriority(groups[m.key]) }))
@@ -126,7 +126,7 @@ export default function Todos() {
     <div className="p-6 max-w-3xl">
       <h1 className="text-2xl font-bold mb-6">未来计划</h1>
 
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
         <div className="flex flex-col gap-3">
           <input
             type="text"
@@ -134,13 +134,13 @@ export default function Todos() {
             onChange={e => setContent(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
             placeholder="计划做什么？"
-            className="border border-gray-300 rounded px-3 py-2 text-sm"
+            className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
           />
           <div className="flex gap-3 items-center">
             <select
               value={priority}
               onChange={e => setPriority(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm"
+              className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm"
             >
               <option value="high">高优先级</option>
               <option value="medium">中优先级</option>
@@ -150,7 +150,7 @@ export default function Todos() {
               type="date"
               value={dueDate}
               onChange={e => setDueDate(e.target.value)}
-              className="border border-gray-300 rounded px-2 py-1 text-sm"
+              className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm"
             />
           </div>
           <TagInput value={tags} onChange={setTags} />
@@ -164,7 +164,7 @@ export default function Todos() {
       </div>
 
       {loading ? (
-        <div className="text-gray-400">加载中...</div>
+        <div className="text-gray-400 dark:text-gray-500">加载中...</div>
       ) : todos.length === 0 ? (
         <EmptyState message="没有未来计划" onRetry={load} />
       ) : (
@@ -176,24 +176,24 @@ export default function Todos() {
               </h2>
               <div className="space-y-2">
                 {group.items.map(todo => (
-                  <div key={todo.id} className={`bg-white rounded-lg shadow p-4 border-l-4 ${priorityColors[todo.priority]}`}>
+                  <div key={todo.id} className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-l-4 ${priorityColors[todo.priority]}`}>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <p className="text-sm">{todo.content}</p>
-                        <div className="flex gap-3 mt-1 text-xs text-gray-500">
+                        <div className="flex gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
                           <span>优先级: {priorityLabels[todo.priority]}</span>
                           {todo.due_date && (
-                            <span className={isOverdue(todo.due_date) ? 'text-red-500' : ''}>
+                            <span className={isOverdue(todo.due_date) ? 'text-red-500 dark:text-red-400' : ''}>
                               截止: {todo.due_date}{isOverdue(todo.due_date) ? ' (已逾期)' : ''}
                             </span>
                           )}
-                          {todo.tags && <span className="text-blue-500">{todo.tags}</span>}
+                          {todo.tags && <span className="text-blue-500 dark:text-blue-400">{todo.tags}</span>}
                         </div>
                       </div>
                       <div className="flex gap-3 shrink-0">
                         <button
                           onClick={() => handleStart(todo.id)}
-                          className="text-sm text-green-600 hover:text-green-800"
+                          className="text-sm text-green-600 dark:text-green-400 hover:text-green-800"
                         >
                           开始做
                         </button>

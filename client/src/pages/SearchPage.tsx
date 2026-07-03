@@ -53,7 +53,7 @@ export default function SearchPage() {
           onChange={e => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="搜索任务、会议、学习、问题..."
-          className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm"
+          className="flex-1 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
         />
         <button
           onClick={() => doSearch(query)}
@@ -65,7 +65,7 @@ export default function SearchPage() {
       </div>
 
       {searched && !loading && !hasResults && (
-        <div className="flex flex-col items-center justify-center py-8 text-gray-400">
+        <div className="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-gray-500">
           <p>暂无结果</p>
         </div>
       )}
@@ -124,7 +124,7 @@ export default function SearchPage() {
 function Section({ title, count, children }: { title: string; count: number; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="text-sm font-semibold text-gray-600 mb-2">{title} ({count})</h2>
+      <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">{title} ({count})</h2>
       <div className="space-y-2">{children}</div>
     </div>
   );
@@ -132,10 +132,10 @@ function Section({ title, count, children }: { title: string; count: number; chi
 
 function ResultCard({ preview, date, tags }: { preview: string; date: string; tags?: string }) {
   return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <p className="text-sm">{preview}</p>
-      <div className="flex gap-3 mt-1 text-xs text-gray-400">
-        {tags && <span className="text-blue-500">{tags}</span>}
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+      <p className="text-sm dark:text-gray-100">{preview}</p>
+      <div className="flex gap-3 mt-1 text-xs text-gray-400 dark:text-gray-500">
+        {tags && <span className="text-blue-500 dark:text-blue-400">{tags}</span>}
         {date && <span>{date}</span>}
       </div>
     </div>

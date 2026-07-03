@@ -18,9 +18,9 @@ function todayStr(): string {
 }
 
 const priorityColors: Record<string, string> = {
-  high: 'text-red-600',
-  medium: 'text-yellow-600',
-  low: 'text-gray-500',
+  high: 'text-red-600 dark:text-red-400',
+  medium: 'text-yellow-600 dark:text-yellow-400',
+  low: 'text-gray-500 dark:text-gray-400',
 };
 
 function isOverdue(dueDate: string | null): boolean {
@@ -80,7 +80,7 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) return <div className="p-8 text-gray-400">加载中...</div>;
+  if (loading) return <div className="p-8 text-gray-400 dark:text-gray-500">加载中...</div>;
 
   return (
     <div className="p-6">
@@ -90,7 +90,7 @@ export default function Dashboard() {
           type="date"
           value={date}
           onChange={e => setDate(e.target.value)}
-          className="border border-gray-300 rounded px-2 py-1 text-sm"
+          className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm"
         />
       </div>
 
@@ -98,7 +98,7 @@ export default function Dashboard() {
         <select
           value={quickCategory}
           onChange={e => setQuickCategory(e.target.value)}
-          className="border border-gray-300 rounded px-2 py-2 text-sm"
+          className="border border-gray-300 dark:border-gray-600 rounded px-2 py-2 text-sm"
         >
           <option value="tasks">正在做</option>
           <option value="todos">未来计划</option>
@@ -112,7 +112,7 @@ export default function Dashboard() {
           onChange={e => setQuickInput(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') handleQuickAdd(); }}
           placeholder="快速记录..."
-          className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm"
+          className="flex-1 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
         />
         <button
           onClick={handleQuickAdd}
@@ -125,11 +125,11 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
         <Card title="正在做" link="/tasks" count={data.inProgressTasks.length}>
           {data.inProgressTasks.length === 0 ? <EmptyState message="暂无" /> : data.inProgressTasks.slice(0, 10).map((t: any) => (
-            <div key={t.id} className="text-sm py-1 border-b border-gray-100 last:border-0">
+            <div key={t.id} className="text-sm py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
               {t.content}
-              {t.tags && <span className="ml-2 text-xs text-blue-500">{t.tags}</span>}
+              {t.tags && <span className="ml-2 text-xs text-blue-500 dark:text-blue-400">{t.tags}</span>}
               {t.subtask_total > 0 && (
-                <span className="ml-2 text-xs text-gray-400">{t.subtask_done}/{t.subtask_total}</span>
+                <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">{t.subtask_done}/{t.subtask_total}</span>
               )}
             </div>
           ))}
@@ -137,17 +137,17 @@ export default function Dashboard() {
 
         <Card title="未来计划" link="/todos" count={data.todos.length}>
           {data.todos.length === 0 ? <EmptyState message="暂无" /> : data.todos.slice(0, 10).map((t: any) => (
-            <div key={t.id} className="text-sm py-1 border-b border-gray-100 last:border-0">
+            <div key={t.id} className="text-sm py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
               <span className={priorityColors[t.priority]}>●</span> {t.content}
-              {isOverdue(t.due_date) && <span className="ml-1 text-xs text-red-500">已逾期</span>}
-              {t.due_date && !isOverdue(t.due_date) && <span className="ml-1 text-xs text-yellow-600">{t.due_date}</span>}
+              {isOverdue(t.due_date) && <span className="ml-1 text-xs text-red-500 dark:text-red-400">已逾期</span>}
+              {t.due_date && !isOverdue(t.due_date) && <span className="ml-1 text-xs text-yellow-600 dark:text-yellow-400">{t.due_date}</span>}
             </div>
           ))}
         </Card>
 
         <Card title="今日会议" link="/meetings" count={data.meetings.length}>
           {data.meetings.length === 0 ? <EmptyState message="暂无" /> : data.meetings.map((m: any) => (
-            <div key={m.id} className="text-sm py-1 border-b border-gray-100 last:border-0">
+            <div key={m.id} className="text-sm py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
               {m.title}
             </div>
           ))}
@@ -155,7 +155,7 @@ export default function Dashboard() {
 
         <Card title="学习知识点" link="/learnings" count={data.learnings.length}>
           {data.learnings.length === 0 ? <EmptyState message="暂无" /> : data.learnings.map((l: any) => (
-            <div key={l.id} className="text-sm py-1 border-b border-gray-100 last:border-0">
+            <div key={l.id} className="text-sm py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
               {l.title}
             </div>
           ))}
@@ -163,7 +163,7 @@ export default function Dashboard() {
 
         <Card title="当前问题" link="/issues" count={data.issues.length}>
           {data.issues.length === 0 ? <EmptyState message="暂无" /> : data.issues.map((i: any) => (
-            <div key={i.id} className="text-sm py-1 border-b border-gray-100 last:border-0">
+            <div key={i.id} className="text-sm py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
               {i.content}
             </div>
           ))}
@@ -175,13 +175,13 @@ export default function Dashboard() {
 
 function Card({ title, link, count, children }: { title: string; link: string; count: number; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-lg shadow p-4 flex flex-col">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex flex-col">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="font-semibold text-gray-700">{title}</h2>
-        <span className="text-xs text-gray-400">{count}</span>
+        <h2 className="font-semibold text-gray-700 dark:text-gray-100">{title}</h2>
+        <span className="text-xs text-gray-400 dark:text-gray-500">{count}</span>
       </div>
       <div className="flex-1 min-h-[100px]">{children}</div>
-      <Link to={link} className="text-xs text-blue-500 hover:text-blue-700 mt-2">查看全部 →</Link>
+      <Link to={link} className="text-xs text-blue-500 dark:text-blue-400 hover:text-blue-700 mt-2">查看全部 →</Link>
     </div>
   );
 }
