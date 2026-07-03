@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { initDb } from './db/index.js';
+import { initDb, getDb } from './db/index.js';
 import tasksRouter from './routes/tasks.js';
 import todosRouter from './routes/todos.js';
 import meetingsRouter from './routes/meetings.js';
@@ -43,6 +43,17 @@ app.use((err: Error, _req: express.Request, res: express.Response, _next: expres
   res.status(500).json({ error: err.message });
 });
 
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
+
+function shutdown() {
+  server.close(() => {
+    try { getDb().close(); } catch {}
+    process.exit(0);
+  });
+  setTimeout(() => process.exit(0), 1000);
+}
+
+process.on('SIGTERM', shutdown);
+process.on('SIGINT', shutdown);
