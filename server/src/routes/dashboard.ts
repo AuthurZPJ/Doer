@@ -28,9 +28,6 @@ router.get('/', (req, res) => {
     const sc = subtaskMap.get(t.id);
     return { ...t, subtask_total: sc ? sc.subtask_total : 0, subtask_done: sc ? sc.subtask_done : 0 };
   });
-  const completedTasks = db.prepare(
-    "SELECT * FROM tasks WHERE status = 'completed' AND completed_at = ? ORDER BY created_at DESC"
-  ).all(date);
   const meetings = db.prepare(
     'SELECT * FROM meetings WHERE meeting_date = ? ORDER BY created_at DESC'
   ).all(date);
@@ -45,7 +42,7 @@ router.get('/', (req, res) => {
   const issues = db.prepare(
     `SELECT * FROM issues WHERE status = 'open' ORDER BY created_at DESC`
   ).all();
-  res.json({ inProgressTasks: inProgressTasksWithSubs, completedTasks, meetings, todos, learnings, issues });
+  res.json({ inProgressTasks: inProgressTasksWithSubs, meetings, todos, learnings, issues });
 });
 
 export default router;

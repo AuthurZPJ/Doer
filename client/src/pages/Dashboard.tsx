@@ -6,7 +6,6 @@ import EmptyState from '../components/EmptyState';
 
 interface DashboardData {
   inProgressTasks: any[];
-  completedTasks: any[];
   meetings: any[];
   todos: any[];
   learnings: any[];
@@ -31,7 +30,7 @@ function isOverdue(dueDate: string | null): boolean {
 export default function Dashboard() {
   const [date, setDate] = useState(todayStr());
   const [data, setData] = useState<DashboardData>({
-    inProgressTasks: [], completedTasks: [], meetings: [], todos: [], learnings: [], issues: []
+    inProgressTasks: [], meetings: [], todos: [], learnings: [], issues: []
   });
   const [loading, setLoading] = useState(true);
   const [quickInput, setQuickInput] = useState('');

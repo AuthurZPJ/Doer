@@ -3,10 +3,6 @@ import { getDb, saveTags } from '../db/index.js';
 
 const router = Router();
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 router.get('/', (req, res) => {
   const date = req.query.date as string;
   if (date) {
@@ -36,6 +32,9 @@ router.post('/', (req, res) => {
 
 router.put('/:id', (req, res) => {
   const { title, content, tags, meeting_date } = req.body;
+  const db = getDb();
+  const meeting = db.prepare('SELECT * FROM meetings WHERE id = ?').get(req.params.id);
+  if (!meeting) return res.status(404).json({ error: 'meeting not found' });
   const fields: string[] = [];
   const values: any[] = [];
   if (title !== undefined) { fields.push('title = ?'); values.push(title); }
@@ -44,7 +43,8 @@ router.put('/:id', (req, res) => {
   if (meeting_date !== undefined) { fields.push('meeting_date = ?'); values.push(meeting_date); }
   if (fields.length === 0) return res.status(400).json({ error: 'no fields to update' });
   values.push(req.params.id);
-  getDb().prepare(`UPDATE meetings SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+  db.prepare(`UPDATE meetings SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+  if (tags !== undefined) saveTags(tags);
   res.json({ ok: true });
 });
 

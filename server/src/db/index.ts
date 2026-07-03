@@ -57,11 +57,6 @@ function migrate(db: Database.Database): void {
       db.exec("ALTER TABLE subtasks ADD COLUMN parent_subtask_id INTEGER REFERENCES subtasks(id) ON DELETE CASCADE");
     }
   }
-
-  const issueCols = db.prepare("PRAGMA table_info(issues)").all() as any[];
-  if (issueCols.length > 0 && !issueCols.some(c => c.name === 'task_id')) {
-    db.exec("ALTER TABLE issues ADD COLUMN task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL");
-  }
 }
 
 export function getDb(): Database.Database {

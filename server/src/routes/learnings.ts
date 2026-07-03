@@ -23,6 +23,9 @@ router.post('/', (req, res) => {
 
 router.put('/:id', (req, res) => {
   const { title, content, tags } = req.body;
+  const db = getDb();
+  const learning = db.prepare('SELECT * FROM learnings WHERE id = ?').get(req.params.id);
+  if (!learning) return res.status(404).json({ error: 'learning not found' });
   const fields: string[] = [];
   const values: any[] = [];
   if (title !== undefined) { fields.push('title = ?'); values.push(title); }
@@ -30,7 +33,8 @@ router.put('/:id', (req, res) => {
   if (tags !== undefined) { fields.push('tags = ?'); values.push(tags); }
   if (fields.length === 0) return res.status(400).json({ error: 'no fields to update' });
   values.push(req.params.id);
-  getDb().prepare(`UPDATE learnings SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+  db.prepare(`UPDATE learnings SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+  if (tags !== undefined) saveTags(tags);
   res.json({ ok: true });
 });
 

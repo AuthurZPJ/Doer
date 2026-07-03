@@ -72,7 +72,7 @@ export default function SearchPage() {
 
       {hasResults && (
         <div className="space-y-6">
-          <Section title="今日完成" count={results.tasks.length}>
+          <Section title="Doing" count={results.tasks.length}>
             {results.tasks.map((t: any) => (
               <ResultCard
                 key={t.id}

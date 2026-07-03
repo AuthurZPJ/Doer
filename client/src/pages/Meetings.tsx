@@ -29,7 +29,7 @@ export default function Meetings() {
     try {
       const result = await meetingsApi.list();
       setMeetings(result);
-      if (result.length > 0 && !selectedId) setSelectedId(result[0].id);
+      setSelectedId(prev => (prev !== null && result.some((m: any) => m.id === prev)) ? prev : (result.length > 0 ? result[0].id : null));
     } catch {
       showToast('加载失败', 'error');
     } finally {

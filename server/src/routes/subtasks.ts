@@ -1,18 +1,18 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import { getDb } from '../db/index.js';
 
 const router = Router({ mergeParams: true });
 
-router.get('/', (req, res) => {
-  const taskId = req.params.taskId;
+router.get('/', (req: Request, res: Response) => {
+  const taskId = req.params.taskId as string;
   const rows = getDb().prepare(
     'SELECT * FROM subtasks WHERE task_id = ? ORDER BY sort_order ASC, created_at ASC'
   ).all(taskId);
   res.json(rows);
 });
 
-router.post('/', (req, res) => {
-  const taskId = req.params.taskId;
+router.post('/', (req: Request, res: Response) => {
+  const taskId = req.params.taskId as string;
   const { content, parent_subtask_id = null } = req.body;
   if (!content) return res.status(400).json({ error: 'content is required' });
   const now = new Date().toISOString();

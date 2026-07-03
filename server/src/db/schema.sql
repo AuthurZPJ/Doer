@@ -40,7 +40,6 @@ CREATE TABLE IF NOT EXISTS issues (
   content TEXT NOT NULL,
   tags TEXT DEFAULT '',
   status TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open', 'resolved')),
-  task_id INTEGER REFERENCES tasks(id) ON DELETE SET NULL,
   resolved_at TEXT,
   created_at TEXT NOT NULL
 );

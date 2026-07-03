@@ -3,10 +3,6 @@ import { getDb, saveTags } from '../db/index.js';
 
 const router = Router();
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
-
 router.get('/', (req, res) => {
   const status = (req.query.status as string) || 'pending';
   const rows = getDb().prepare(
