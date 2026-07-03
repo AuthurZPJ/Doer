@@ -46,19 +46,28 @@ export default function WeeklyReport() {
   const handleNextWeek = () => setWeekStart(addDays(weekStart, 7));
   const handleThisWeek = () => setWeekStart(getWeekStart(todayStr()));
 
-  const weekEnd = addDays(weekStart, 6);
-  const totalTasks = report?.days?.reduce((sum: number, d: any) => sum + d.tasks.length, 0) || 0;
+  const weekEnd = report?.week_end || addDays(weekStart, 6);
+  const totalTasks = report?.days?.reduce((sum: number, d: any) => sum + d.tasks.length + (d.standaloneSubtasks?.length || 0), 0) || 0;
+
+  const hasDayContent = (day: any) => day.tasks.length > 0 || (day.standaloneSubtasks?.length || 0) > 0;
 
   const handleExport = () => {
     if (!report) return;
     let md = `# 周报 ${weekStart} ~ ${weekEnd}\n\n`;
     md += `## 每日完成\n\n`;
     for (const day of report.days) {
-      if (day.tasks.length === 0) continue;
+      if (!hasDayContent(day)) continue;
       const weekday = weekdayNames[new Date(day.date).getDay() === 0 ? 6 : new Date(day.date).getDay() - 1];
       md += `### ${day.date} ${weekday}\n`;
       for (const task of day.tasks) {
         md += `- ${task.content}${task.tags ? ` [${task.tags}]` : ''}\n`;
+        const doneSubs = (task.subtasks || []).filter((s: any) => s.status === 'done');
+        for (const sub of doneSubs) {
+          md += `  - └ ${sub.content}\n`;
+        }
+      }
+      for (const sub of (day.standaloneSubtasks || [])) {
+        md += `- └ ${sub.content} (主任务未完成)${sub.parent_tags ? ` [${sub.parent_tags}]` : ''}\n`;
       }
       md += '\n';
     }
@@ -103,17 +112,40 @@ export default function WeeklyReport() {
               <div key={day.date} className="bg-white rounded-lg shadow p-4">
                 <p className="text-sm font-medium mb-2">
                   {day.date} {weekdayNames[i]}
-                  <span className="ml-2 text-xs text-gray-400">{day.tasks.length} 项</span>
+                  <span className="ml-2 text-xs text-gray-400">{day.tasks.length + (day.standaloneSubtasks?.length || 0)} 项</span>
                 </p>
-                {day.tasks.length === 0 ? (
+                {!hasDayContent(day) ? (
                   <p className="text-sm text-gray-300">无</p>
                 ) : (
                   <ul className="text-sm space-y-1">
-                    {day.tasks.map((t: any) => (
-                      <li key={t.id} className="flex items-start gap-2">
+                    {day.tasks.map((t: any) => {
+                      const doneSubs = (t.subtasks || []).filter((s: any) => s.status === 'done');
+                      return (
+                        <li key={t.id}>
+                          <div className="flex items-start gap-2">
+                            <span className="text-gray-400">•</span>
+                            <span>{t.content}</span>
+                            {t.tags && <span className="text-xs text-blue-500">[{t.tags}]</span>}
+                          </div>
+                          {doneSubs.length > 0 && (
+                            <ul className="ml-4 space-y-0.5 mt-0.5">
+                              {doneSubs.map((sub: any) => (
+                                <li key={sub.id} className="flex items-start gap-2 text-gray-500">
+                                  <span className="text-gray-300">└</span>
+                                  <span className="text-xs">{sub.content}</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </li>
+                      );
+                    })}
+                    {(day.standaloneSubtasks || []).map((sub: any) => (
+                      <li key={`sub-${sub.id}`} className="flex items-start gap-2">
                         <span className="text-gray-400">•</span>
-                        <span>{t.content}</span>
-                        {t.tags && <span className="text-xs text-blue-500">[{t.tags}]</span>}
+                        <span className="text-gray-600">└ {sub.content}</span>
+                        <span className="text-xs text-yellow-600">主任务未完成</span>
+                        {sub.parent_tags && <span className="text-xs text-blue-500">[{sub.parent_tags}]</span>}
                       </li>
                     ))}
                   </ul>
@@ -129,7 +161,9 @@ export default function WeeklyReport() {
                 <p className="text-sm font-medium text-blue-600 mb-1">{tag}</p>
                 <ul className="text-sm space-y-1 ml-4">
                   {(tasks as string[]).map((task, i) => (
-                    <li key={i} className="text-gray-600">• {task}</li>
+                    <li key={i} className={`text-gray-600 ${task.startsWith('  └') ? 'ml-4 text-xs text-gray-500' : ''}`}>
+                      • {task}
+                    </li>
                   ))}
                 </ul>
               </div>

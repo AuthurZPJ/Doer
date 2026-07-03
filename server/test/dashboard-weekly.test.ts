@@ -96,4 +96,45 @@ describe('weekly report', () => {
     ).all('2026-01-01', '2026-01-07');
     expect(tasks).toHaveLength(0);
   });
+
+  it('should include done subtasks of completed tasks in weekly report', () => {
+    const now = new Date().toISOString();
+    const taskInfo = db.prepare(
+      'INSERT INTO tasks (content, tags, status, completed_at, created_at) VALUES (?, ?, ?, ?, ?)'
+    ).run('开发Doer', '前端', 'completed', '2026-06-29', now);
+    const taskId = taskInfo.lastInsertRowid;
+
+    db.prepare('INSERT INTO subtasks (task_id, content, status, created_at, done_at) VALUES (?, ?, ?, ?, ?)')
+      .run(taskId, '设计数据库', 'done', now, '2026-06-29T10:00:00Z');
+    db.prepare('INSERT INTO subtasks (task_id, content, status, created_at) VALUES (?, ?, ?, ?)')
+      .run(taskId, '写API', 'pending', now);
+
+    const doneSubs = db.prepare(
+      "SELECT * FROM subtasks WHERE task_id = ? AND status = 'done'"
+    ).all(taskId) as any[];
+
+    expect(doneSubs).toHaveLength(1);
+    expect(doneSubs[0].content).toBe('设计数据库');
+  });
+
+  it('should include done subtasks of in_progress tasks as standalone', () => {
+    const now = new Date().toISOString();
+    const taskInfo = db.prepare(
+      'INSERT INTO tasks (content, tags, status, completed_at, created_at) VALUES (?, ?, ?, ?, ?)'
+    ).run('大项目', '后端', 'in_progress', null, now);
+    const taskId = taskInfo.lastInsertRowid;
+
+    db.prepare('INSERT INTO subtasks (task_id, content, status, created_at, done_at) VALUES (?, ?, ?, ?, ?)')
+      .run(taskId, '子项1', 'done', now, '2026-06-29T10:00:00Z');
+
+    const standalone = db.prepare(
+      `SELECT s.*, t.tags as parent_tags FROM subtasks s
+       JOIN tasks t ON s.task_id = t.id
+       WHERE s.status = 'done' AND date(s.done_at) = ? AND t.status != 'completed'`
+    ).all('2026-06-29') as any[];
+
+    expect(standalone).toHaveLength(1);
+    expect(standalone[0].content).toBe('子项1');
+    expect(standalone[0].parent_tags).toBe('后端');
+  });
 });
