@@ -48,12 +48,11 @@ const server = app.listen(PORT, () => {
 });
 
 function shutdown() {
-  server.close(() => {
-    try { getDb().close(); } catch {}
-    process.exit(0);
-  });
-  setTimeout(() => process.exit(0), 1000);
+  try { getDb().close(); } catch {}
+  server.close();
+  process.exit(0);
 }
 
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
+process.on('beforeExit', () => { try { getDb().close(); } catch {} });
