@@ -23,7 +23,7 @@
 
 - 前端端口 5173，后端端口 3001
 - Vite 配置 proxy 转发 `/api` 请求到后端
-- SQLite 文件位置：`server/data/mytool.db`，首次启动自动建表
+- SQLite 文件位置：`server/data/doer.db`，首次启动自动建表
 
 ## 3. 页面结构
 
@@ -204,7 +204,7 @@ GET /api/tags                          # 用于输入时自动补全
 ```
 POST /api/backup
 ```
-复制 `mytool.db` 到 `server/data/backups/mytool_YYYYMMDD_HHmmss.db`，返回文件路径。
+复制 `doer.db` 到 `server/data/backups/doer_YYYYMMDD_HHmmss.db`，返回文件路径。
 
 ## 6. 前端页面与交互
 
@@ -258,7 +258,7 @@ POST /api/backup
 ## 7. 项目结构
 
 ```
-mytool/
+Doer/
 ├── client/                    # React 前端
 │   ├── src/
 │   │   ├── pages/             # 7 个页面组件
@@ -275,7 +275,7 @@ mytool/
 │   │   │   └── index.ts       # better-sqlite3 封装
 │   │   └── index.ts
 │   ├── data/                  # SQLite 数据文件（gitignore）
-│   │   ├── mytool.db
+│   │   ├── doer.db
 │   │   └── backups/
 │   └── package.json
 └── package.json               # 根 workspace，一键启动前后端
