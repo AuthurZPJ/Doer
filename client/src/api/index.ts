@@ -32,7 +32,7 @@ export const learningsApi = {
 
 export const issuesApi = {
   list: (status?: string) => api.get('/issues', { params: { status } }).then(r => r.data),
-  create: (data: { content: string; tags?: string; task_id?: number | null }) => api.post('/issues', data).then(r => r.data),
+  create: (data: { content: string; tags?: string }) => api.post('/issues', data).then(r => r.data),
   update: (id: number, data: Record<string, any>) => api.put(`/issues/${id}`, data).then(r => r.data),
   delete: (id: number) => api.delete(`/issues/${id}`).then(r => r.data),
 };
