@@ -13,7 +13,7 @@ Doer CLI - 快速记录工作内容
 
 用法:
   doer <内容>              添加到 Doing
-  doer -t <内容>           添加到 Doing (带标签)
+  doer -t <标签> <内容>    添加到 Doing (带标签)
   doer -p <内容>           添加到未来计划
   doer -m <标题>           添加会议记录 (今天)
   doer -l <标题>           添加知识点
