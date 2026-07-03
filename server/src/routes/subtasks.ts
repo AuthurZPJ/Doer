@@ -26,10 +26,11 @@ router.post('/', (req: Request, res: Response) => {
   res.status(201).json({ id: info.lastInsertRowid });
 });
 
-router.put('/:id', (req, res) => {
+router.put('/:id', (req: Request, res: Response) => {
   const { content, status, sort_order, parent_subtask_id } = req.body;
   const db = getDb();
-  const subtask = db.prepare('SELECT * FROM subtasks WHERE id = ?').get(req.params.id) as any;
+  const taskId = req.params.taskId as string;
+  const subtask = db.prepare('SELECT * FROM subtasks WHERE id = ? AND task_id = ?').get(req.params.id, taskId) as any;
   if (!subtask) return res.status(404).json({ error: 'subtask not found' });
 
   const updates: Record<string, any> = {};
@@ -47,12 +48,13 @@ router.put('/:id', (req, res) => {
 
   const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
   const values = [...Object.values(updates), req.params.id];
-  db.prepare(`UPDATE subtasks SET ${setClause} WHERE id = ?`).run(...values);
+  db.prepare(`UPDATE subtasks SET ${setClause} WHERE id = ? AND task_id = ?`).run(...values, taskId);
   res.json({ ok: true });
 });
 
-router.delete('/:id', (req, res) => {
-  getDb().prepare('DELETE FROM subtasks WHERE id = ?').run(req.params.id);
+router.delete('/:id', (req: Request, res: Response) => {
+  const taskId = req.params.taskId as string;
+  getDb().prepare('DELETE FROM subtasks WHERE id = ? AND task_id = ?').run(req.params.id, taskId);
   res.json({ ok: true });
 });
 

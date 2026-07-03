@@ -4,10 +4,6 @@ import { todayStr } from '../utils/date.js';
 
 const router = Router();
 
-function today(): string {
-  return todayStr();
-}
-
 router.get('/', (req, res) => {
   const status = req.query.status as string;
   const date = req.query.date as string;
@@ -34,7 +30,7 @@ router.post('/', (req, res) => {
   const { content, tags = '', status = 'in_progress', due_date = null } = req.body;
   if (!content) return res.status(400).json({ error: 'content is required' });
   const now = new Date().toISOString();
-  const completedAt = status === 'completed' ? today() : null;
+  const completedAt = status === 'completed' ? todayStr() : null;
   const info = getDb().prepare(
     'INSERT INTO tasks (content, tags, status, due_date, completed_at, created_at) VALUES (?, ?, ?, ?, ?, ?)'
   ).run(content, tags, status, due_date, completedAt, now);
@@ -54,7 +50,7 @@ router.put('/:id', (req, res) => {
   if (due_date !== undefined) updates.due_date = due_date;
   if (status !== undefined) {
     updates.status = status;
-    updates.completed_at = status === 'completed' ? today() : null;
+    updates.completed_at = status === 'completed' ? todayStr() : null;
   }
 
   if (Object.keys(updates).length === 0) {

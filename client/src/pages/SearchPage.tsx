@@ -6,10 +6,9 @@ interface SearchResults {
   tasks: any[];
   meetings: any[];
   learnings: any[];
-  issues: any[];
 }
 
-const EMPTY: SearchResults = { tasks: [], meetings: [], learnings: [], issues: [] };
+const EMPTY: SearchResults = { tasks: [], meetings: [], learnings: [] };
 
 export default function SearchPage() {
   const [query, setQuery] = useState('');
@@ -37,7 +36,7 @@ export default function SearchPage() {
   };
 
   const hasResults =
-    results.tasks.length + results.meetings.length + results.learnings.length + results.issues.length > 0;
+    results.tasks.length + results.meetings.length + results.learnings.length > 0;
 
   const dateOf = (row: any, field: string) =>
     row[field] ? new Date(row[field]).toLocaleDateString() : '';
@@ -52,7 +51,7 @@ export default function SearchPage() {
           value={query}
           onChange={e => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="搜索任务、会议、学习、问题..."
+          placeholder="搜索任务、会议、知识点..."
           className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-base"
         />
         <button

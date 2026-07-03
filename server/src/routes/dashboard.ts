@@ -4,12 +4,8 @@ import { todayStr } from '../utils/date.js';
 
 const router = Router();
 
-function today(): string {
-  return todayStr();
-}
-
 router.get('/', (req, res) => {
-  const date = (req.query.date as string) || today();
+  const date = (req.query.date as string) || todayStr();
   const db = getDb();
   const inProgressTasks = db.prepare(
     "SELECT * FROM tasks WHERE status = 'in_progress' ORDER BY created_at ASC"

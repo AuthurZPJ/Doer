@@ -14,6 +14,7 @@ export function initDb(): Database.Database {
   mkdirSync(DB_DIR, { recursive: true });
   db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
   const schema = readFileSync(SCHEMA_PATH, 'utf-8');
   db.exec(schema);
   migrate(db);

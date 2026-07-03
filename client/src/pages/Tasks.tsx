@@ -255,7 +255,7 @@ export default function Tasks() {
     <AddChildInput taskId={taskId} parentKey={parentKey} parentSubtaskId={parentSubtaskId} value={subInputs[parentKey] || ''} onChange={(v) => setSubInputs(prev => ({ ...prev, [parentKey]: v }))} onSubmit={handleAddSubtask} />
   );
 
-  const renderSubtaskNode = (taskId: number, node: SubtaskNode, depth: number = 0) => {
+  const renderSubtaskNode = (taskId: number, node: SubtaskNode) => {
     const isEditingSub = editingSub?.subId === node.id;
     const hasChildren = node.children.length > 0;
     return (
@@ -304,7 +304,7 @@ export default function Tasks() {
         </div>
         {hasChildren && (
           <div className="ml-3 pl-3 border-l border-gray-200 dark:border-gray-700 space-y-0.5">
-            {node.children.map(child => renderSubtaskNode(taskId, child, depth + 1))}
+            {node.children.map(child => renderSubtaskNode(taskId, child))}
             <div className="pl-1 py-0.5">
               {renderAddChildInput(taskId, `sub:${node.id}`, node.id)}
             </div>

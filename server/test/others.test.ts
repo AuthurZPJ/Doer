@@ -60,49 +60,6 @@ describe('learnings table', () => {
   });
 });
 
-describe('issues table', () => {
-  let db: Database.Database;
-
-  beforeEach(() => {
-    db = createTestDb();
-  });
-
-  it('should insert an issue with default status open', () => {
-    const now = new Date().toISOString();
-    const info = db.prepare(
-      'INSERT INTO issues (content, tags, status, created_at) VALUES (?, ?, ?, ?)'
-    ).run('内存泄漏', '后端', 'open', now);
-
-    const issue = db.prepare('SELECT * FROM issues WHERE id = ?').get(info.lastInsertRowid) as any;
-    expect(issue.content).toBe('内存泄漏');
-    expect(issue.status).toBe('open');
-    expect(issue.resolved_at).toBeNull();
-  });
-
-  it('should resolve an issue', () => {
-    const now = new Date().toISOString();
-    const info = db.prepare(
-      'INSERT INTO issues (content, tags, status, created_at) VALUES (?, ?, ?, ?)'
-    ).run('Bug', '', 'open', now);
-
-    db.prepare('UPDATE issues SET status = ?, resolved_at = ? WHERE id = ?').run('resolved', now, info.lastInsertRowid);
-
-    const issue = db.prepare('SELECT * FROM issues WHERE id = ?').get(info.lastInsertRowid) as any;
-    expect(issue.status).toBe('resolved');
-    expect(issue.resolved_at).toBe(now);
-  });
-
-  it('should query open issues', () => {
-    const now = new Date().toISOString();
-    db.prepare('INSERT INTO issues (content, tags, status, created_at) VALUES (?, ?, ?, ?)').run('未解决1', '', 'open', now);
-    db.prepare('INSERT INTO issues (content, tags, status, created_at) VALUES (?, ?, ?, ?)').run('已解决', '', 'resolved', now);
-    db.prepare('INSERT INTO issues (content, tags, status, created_at) VALUES (?, ?, ?, ?)').run('未解决2', '', 'open', now);
-
-    const open = db.prepare("SELECT * FROM issues WHERE status = 'open'").all() as any[];
-    expect(open).toHaveLength(2);
-  });
-});
-
 describe('tags table', () => {
   let db: Database.Database;
 

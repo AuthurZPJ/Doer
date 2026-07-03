@@ -11,6 +11,7 @@ export function createTestDb(): Database.Database {
   const dir = mkdtempSync(join(tmpdir(), 'doer-test-'));
   const db = new Database(join(dir, 'test.db'));
   db.pragma('journal_mode = WAL');
+  db.pragma('foreign_keys = ON');
   const schema = readFileSync(SCHEMA_PATH, 'utf-8');
   db.exec(schema);
   return db;

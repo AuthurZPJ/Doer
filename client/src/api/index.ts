@@ -30,13 +30,6 @@ export const learningsApi = {
   delete: (id: number) => api.delete(`/learnings/${id}`).then(r => r.data),
 };
 
-export const issuesApi = {
-  list: (status?: string) => api.get('/issues', { params: { status } }).then(r => r.data),
-  create: (data: { content: string; tags?: string }) => api.post('/issues', data).then(r => r.data),
-  update: (id: number, data: Record<string, any>) => api.put(`/issues/${id}`, data).then(r => r.data),
-  delete: (id: number) => api.delete(`/issues/${id}`).then(r => r.data),
-};
-
 export const dashboardApi = {
   get: (date?: string) => api.get('/dashboard', { params: { date } }).then(r => r.data),
 };
@@ -66,5 +59,3 @@ export const subtasksApi = {
 export const searchApi = {
   search: (q: string) => api.get('/search', { params: { q } }).then(r => r.data),
 };
-
-export default api;
