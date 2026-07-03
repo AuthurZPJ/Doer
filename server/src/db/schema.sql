@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS tasks (
   content TEXT NOT NULL,
   tags TEXT DEFAULT '',
   status TEXT NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed')),
+  due_date TEXT,
   completed_at TEXT,
   created_at TEXT NOT NULL
 );

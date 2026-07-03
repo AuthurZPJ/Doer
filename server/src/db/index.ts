@@ -34,6 +34,7 @@ function migrate(db: Database.Database): void {
         content TEXT NOT NULL,
         tags TEXT DEFAULT '',
         status TEXT NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed')),
+        due_date TEXT,
         completed_at TEXT,
         created_at TEXT NOT NULL
       );
@@ -46,6 +47,11 @@ function migrate(db: Database.Database): void {
       DROP TABLE tasks;
       ALTER TABLE tasks_new RENAME TO tasks;
     `);
+  }
+
+  const taskCols2 = db.prepare("PRAGMA table_info(tasks)").all() as any[];
+  if (taskCols2.length > 0 && !taskCols2.some(c => c.name === 'due_date')) {
+    db.exec("ALTER TABLE tasks ADD COLUMN due_date TEXT");
   }
 
   const subtaskCols = db.prepare("PRAGMA table_info(subtasks)").all() as any[];

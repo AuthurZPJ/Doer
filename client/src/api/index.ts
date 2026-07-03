@@ -4,7 +4,7 @@ const api = axios.create({ baseURL: '/api' });
 
 export const tasksApi = {
   list: (params?: { status?: string; date?: string }) => api.get('/tasks', { params }).then(r => r.data),
-  create: (data: { content: string; tags?: string; status?: string }) => api.post('/tasks', data).then(r => r.data),
+  create: (data: { content: string; tags?: string; status?: string; due_date?: string | null }) => api.post('/tasks', data).then(r => r.data),
   update: (id: number, data: Record<string, any>) => api.put(`/tasks/${id}`, data).then(r => r.data),
   delete: (id: number) => api.delete(`/tasks/${id}`).then(r => r.data),
 };

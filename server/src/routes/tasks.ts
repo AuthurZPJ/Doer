@@ -30,19 +30,19 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { content, tags = '', status = 'in_progress' } = req.body;
+  const { content, tags = '', status = 'in_progress', due_date = null } = req.body;
   if (!content) return res.status(400).json({ error: 'content is required' });
   const now = new Date().toISOString();
   const completedAt = status === 'completed' ? today() : null;
   const info = getDb().prepare(
-    'INSERT INTO tasks (content, tags, status, completed_at, created_at) VALUES (?, ?, ?, ?, ?)'
-  ).run(content, tags, status, completedAt, now);
+    'INSERT INTO tasks (content, tags, status, due_date, completed_at, created_at) VALUES (?, ?, ?, ?, ?, ?)'
+  ).run(content, tags, status, due_date, completedAt, now);
   saveTags(tags);
   res.status(201).json({ id: info.lastInsertRowid });
 });
 
 router.put('/:id', (req, res) => {
-  const { content, tags, status } = req.body;
+  const { content, tags, status, due_date } = req.body;
   const db = getDb();
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id) as any;
   if (!task) return res.status(404).json({ error: 'task not found' });
@@ -50,6 +50,7 @@ router.put('/:id', (req, res) => {
   const updates: Record<string, any> = {};
   if (content !== undefined) updates.content = content;
   if (tags !== undefined) updates.tags = tags;
+  if (due_date !== undefined) updates.due_date = due_date;
   if (status !== undefined) {
     updates.status = status;
     updates.completed_at = status === 'completed' ? today() : null;
