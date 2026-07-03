@@ -293,6 +293,7 @@ export default function WeeklyReport() {
               <DatePicker value={exportFrom} onChange={(v) => setExportFrom(getWeekStart(v))} />
               <span className="text-gray-400">~</span>
               <DatePicker value={exportTo} onChange={(v) => setExportTo(getWeekStart(v))} />
+              <span className="text-xs text-gray-400">{exportFrom} ~ {addDays(exportTo, 6)}</span>
               <button
                 onClick={handleExportRange}
                 disabled={exporting}
@@ -304,7 +305,7 @@ export default function WeeklyReport() {
             <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded">
               <span className="text-sm text-gray-600 dark:text-gray-400">从指定周至本周:</span>
               <DatePicker value={exportFrom} onChange={(v) => setExportFrom(getWeekStart(v))} />
-              <span className="text-sm text-gray-400">~ {getWeekStart(todayStr())}</span>
+              <span className="text-xs text-gray-400">{exportFrom} ~ {addDays(getWeekStart(todayStr()), 6)}</span>
               <button
                 onClick={handleExportFromToThis}
                 disabled={exporting}
