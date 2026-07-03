@@ -5,7 +5,8 @@ import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
 
 interface DashboardData {
-  tasks: any[];
+  inProgressTasks: any[];
+  completedTasks: any[];
   meetings: any[];
   todos: any[];
   learnings: any[];
@@ -29,7 +30,9 @@ function isOverdue(dueDate: string | null): boolean {
 
 export default function Dashboard() {
   const [date, setDate] = useState(todayStr());
-  const [data, setData] = useState<DashboardData>({ tasks: [], meetings: [], todos: [], learnings: [], issues: [] });
+  const [data, setData] = useState<DashboardData>({
+    inProgressTasks: [], completedTasks: [], meetings: [], todos: [], learnings: [], issues: []
+  });
   const [loading, setLoading] = useState(true);
   const [quickInput, setQuickInput] = useState('');
   const [quickCategory, setQuickCategory] = useState('tasks');
@@ -97,8 +100,8 @@ export default function Dashboard() {
           onChange={e => setQuickCategory(e.target.value)}
           className="border border-gray-300 rounded px-2 py-2 text-sm"
         >
-          <option value="tasks">今日完成</option>
-          <option value="todos">未做工作</option>
+          <option value="tasks">正在做</option>
+          <option value="todos">未来计划</option>
           <option value="meetings">会议</option>
           <option value="learnings">学习</option>
           <option value="issues">问题</option>
@@ -120,8 +123,8 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-        <Card title="今日完成" link="/tasks" count={data.tasks.length}>
-          {data.tasks.length === 0 ? <EmptyState message="暂无" /> : data.tasks.map((t: any) => (
+        <Card title="正在做" link="/tasks" count={data.inProgressTasks.length}>
+          {data.inProgressTasks.length === 0 ? <EmptyState message="暂无" /> : data.inProgressTasks.slice(0, 10).map((t: any) => (
             <div key={t.id} className="text-sm py-1 border-b border-gray-100 last:border-0">
               {t.content}
               {t.tags && <span className="ml-2 text-xs text-blue-500">{t.tags}</span>}
@@ -129,7 +132,7 @@ export default function Dashboard() {
           ))}
         </Card>
 
-        <Card title="未做工作" link="/todos" count={data.todos.length}>
+        <Card title="未来计划" link="/todos" count={data.todos.length}>
           {data.todos.length === 0 ? <EmptyState message="暂无" /> : data.todos.slice(0, 10).map((t: any) => (
             <div key={t.id} className="text-sm py-1 border-b border-gray-100 last:border-0">
               <span className={priorityColors[t.priority]}>●</span> {t.content}

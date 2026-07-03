@@ -10,6 +10,7 @@ import dashboardRouter from './routes/dashboard.js';
 import weeklyReportRouter from './routes/weekly-report.js';
 import tagsRouter from './routes/tags.js';
 import backupRouter from './routes/backup.js';
+import subtasksRouter from './routes/subtasks.js';
 
 const app = express();
 const PORT = 3001;
@@ -25,6 +26,7 @@ app.get('/api/health', (_req, res) => {
 });
 
 app.use('/api/tasks', tasksRouter);
+app.use('/api/tasks/:taskId/subtasks', subtasksRouter);
 app.use('/api/todos', todosRouter);
 app.use('/api/meetings', meetingsRouter);
 app.use('/api/learnings', learningsRouter);

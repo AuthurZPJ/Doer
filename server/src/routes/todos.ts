@@ -58,8 +58,8 @@ router.put('/:id', (req, res) => {
     db.prepare(`UPDATE todos SET ${setClause} WHERE id = ?`).run(...values);
     if (wasPending && status === 'done') {
       db.prepare(
-        'INSERT INTO tasks (content, tags, completed_at, created_at) VALUES (?, ?, ?, ?)'
-      ).run(todo.content, todo.tags || updates.tags || '', today(), now);
+        'INSERT INTO tasks (content, tags, status, completed_at, created_at) VALUES (?, ?, ?, ?, ?)'
+      ).run(todo.content, todo.tags || updates.tags || '', 'in_progress', null, now);
     }
   });
   tx();

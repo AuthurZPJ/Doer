@@ -16,7 +16,37 @@ export function initDb(): Database.Database {
   db.pragma('journal_mode = WAL');
   const schema = readFileSync(SCHEMA_PATH, 'utf-8');
   db.exec(schema);
+  migrate(db);
   return db;
+}
+
+function migrate(db: Database.Database): void {
+  const columns = db.prepare("PRAGMA table_info(tasks)").all() as any[];
+  if (columns.length === 0) return;
+
+  const hasStatus = columns.some(c => c.name === 'status');
+  const completedAtCol = columns.find(c => c.name === 'completed_at');
+
+  if (!hasStatus || (completedAtCol && completedAtCol.notnull === 1)) {
+    db.exec(`
+      CREATE TABLE IF NOT EXISTS tasks_new (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        content TEXT NOT NULL,
+        tags TEXT DEFAULT '',
+        status TEXT NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed')),
+        completed_at TEXT,
+        created_at TEXT NOT NULL
+      );
+      INSERT INTO tasks_new (id, content, tags, status, completed_at, created_at)
+        SELECT id, content, tags,
+          CASE WHEN ${hasStatus ? 'status' : "'completed'"} IN ('in_progress', 'completed')
+            THEN ${hasStatus ? 'status' : "'completed'"} ELSE 'completed' END,
+          completed_at, created_at
+        FROM tasks;
+      DROP TABLE tasks;
+      ALTER TABLE tasks_new RENAME TO tasks;
+    `);
+  }
 }
 
 export function getDb(): Database.Database {

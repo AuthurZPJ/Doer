@@ -68,10 +68,10 @@ export default function Todos() {
     }
   };
 
-  const handleComplete = async (id: number) => {
+  const handleStart = async (id: number) => {
     try {
       await todosApi.update(id, { status: 'done' });
-      showToast('已完成，已转入今日完成');
+      showToast('已转入正在做');
       load();
     } catch {
       showToast('操作失败', 'error');
@@ -90,7 +90,7 @@ export default function Todos() {
 
   return (
     <div className="p-6 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6">未做工作</h1>
+      <h1 className="text-2xl font-bold mb-6">未来计划</h1>
 
       <div className="bg-white rounded-lg shadow p-4 mb-6">
         <div className="flex flex-col gap-3">
@@ -99,7 +99,7 @@ export default function Todos() {
             value={content}
             onChange={e => setContent(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
-            placeholder="还有什么要做？"
+            placeholder="计划做什么？"
             className="border border-gray-300 rounded px-3 py-2 text-sm"
           />
           <div className="flex gap-3 items-center">
@@ -132,7 +132,7 @@ export default function Todos() {
       {loading ? (
         <div className="text-gray-400">加载中...</div>
       ) : todos.length === 0 ? (
-        <EmptyState message="没有待办工作" onRetry={load} />
+        <EmptyState message="没有未来计划" onRetry={load} />
       ) : (
         <div className="space-y-2">
           {todos.map(todo => (
@@ -152,10 +152,10 @@ export default function Todos() {
                 </div>
                 <div className="flex gap-3 shrink-0">
                   <button
-                    onClick={() => handleComplete(todo.id)}
+                    onClick={() => handleStart(todo.id)}
                     className="text-sm text-green-600 hover:text-green-800"
                   >
-                    完成
+                    开始做
                   </button>
                   <ConfirmButton onConfirm={() => handleDelete(todo.id)} />
                 </div>

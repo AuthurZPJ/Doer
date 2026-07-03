@@ -5,7 +5,7 @@ import { showToast } from './Toast';
 const navItems = [
   { path: '/', label: '今日看板' },
   { path: '/tasks', label: '今日完成' },
-  { path: '/todos', label: '未做工作' },
+  { path: '/todos', label: '未来计划' },
   { path: '/meetings', label: '会议记录' },
   { path: '/learnings', label: '学习知识点' },
   { path: '/issues', label: '当前问题' },

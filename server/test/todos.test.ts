@@ -22,9 +22,8 @@ describe('todos table', () => {
     expect(todo.done_at).toBeNull();
   });
 
-  it('should complete a todo and auto-create a task (transaction)', () => {
+  it('should start a todo: mark done and auto-create in_progress task', () => {
     const now = new Date().toISOString();
-    const today = now.slice(0, 10);
 
     const todoInfo = db.prepare(
       'INSERT INTO todos (content, priority, due_date, tags, status, created_at) VALUES (?, ?, ?, ?, ?, ?)'
@@ -35,8 +34,8 @@ describe('todos table', () => {
       db.prepare('UPDATE todos SET status = ?, done_at = ? WHERE id = ?').run('done', now, todoId);
       const todo = db.prepare('SELECT * FROM todos WHERE id = ?').get(todoId) as any;
       db.prepare(
-        'INSERT INTO tasks (content, tags, completed_at, created_at) VALUES (?, ?, ?, ?)'
-      ).run(todo.content, todo.tags, today, now);
+        'INSERT INTO tasks (content, tags, status, completed_at, created_at) VALUES (?, ?, ?, ?, ?)'
+      ).run(todo.content, todo.tags, 'in_progress', null, now);
     });
     tx();
 
@@ -44,10 +43,10 @@ describe('todos table', () => {
     expect(todo.status).toBe('done');
     expect(todo.done_at).toBe(now);
 
-    const tasks = db.prepare('SELECT * FROM tasks WHERE content = ?').all('完成报告') as any[];
+    const tasks = db.prepare("SELECT * FROM tasks WHERE status = 'in_progress' AND content = ?").all('完成报告') as any[];
     expect(tasks).toHaveLength(1);
     expect(tasks[0].tags).toBe('文档');
-    expect(tasks[0].completed_at).toBe(today);
+    expect(tasks[0].completed_at).toBeNull();
   });
 
   it('should reject invalid priority', () => {

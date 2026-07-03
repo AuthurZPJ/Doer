@@ -28,7 +28,7 @@ router.get('/', (req, res) => {
   for (let i = 0; i < 7; i++) {
     const date = addDays(weekStart, i);
     const tasks = db.prepare(
-      'SELECT * FROM tasks WHERE completed_at = ? ORDER BY created_at ASC'
+      "SELECT * FROM tasks WHERE status = 'completed' AND completed_at = ? ORDER BY created_at ASC"
     ).all(date) as any[];
     days.push({ date, tasks });
     allTasks.push(...tasks);
