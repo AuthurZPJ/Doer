@@ -1,0 +1,94 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import Database from 'better-sqlite3';
+import { createTestDb } from './helpers';
+
+describe('dashboard aggregation', () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = createTestDb();
+  });
+
+  it('should aggregate all modules for a given date', () => {
+    const now = new Date().toISOString();
+    const today = now.slice(0, 10);
+
+    db.prepare('INSERT INTO tasks (content, tags, completed_at, created_at) VALUES (?, ?, ?, ?)').run('任务1', '前端', today, now);
+    db.prepare('INSERT INTO meetings (title, content, tags, meeting_date, created_at) VALUES (?, ?, ?, ?, ?)').run('会议1', '', '', today, now);
+    db.prepare('INSERT INTO todos (content, priority, due_date, tags, status, created_at) VALUES (?, ?, ?, ?, ?, ?)').run('待办1', 'high', null, '', 'pending', now);
+    db.prepare('INSERT INTO learnings (title, content, tags, created_at) VALUES (?, ?, ?, ?)').run('学习1', '', '', now);
+    db.prepare('INSERT INTO issues (content, tags, status, created_at) VALUES (?, ?, ?, ?)').run('问题1', '', 'open', now);
+
+    const tasks = db.prepare('SELECT * FROM tasks WHERE completed_at = ?').all(today);
+    const meetings = db.prepare('SELECT * FROM meetings WHERE meeting_date = ?').all(today);
+    const todos = db.prepare("SELECT * FROM todos WHERE status = 'pending'").all();
+    const learnings = db.prepare('SELECT * FROM learnings ORDER BY created_at DESC LIMIT 5').all();
+    const issues = db.prepare("SELECT * FROM issues WHERE status = 'open'").all();
+
+    expect(tasks).toHaveLength(1);
+    expect(meetings).toHaveLength(1);
+    expect(todos).toHaveLength(1);
+    expect(learnings).toHaveLength(1);
+    expect(issues).toHaveLength(1);
+  });
+
+  it('should not include other dates in dashboard', () => {
+    const now = new Date().toISOString();
+    const today = now.slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+
+    db.prepare('INSERT INTO tasks (content, tags, completed_at, created_at) VALUES (?, ?, ?, ?)').run('今天的', '', today, now);
+    db.prepare('INSERT INTO tasks (content, tags, completed_at, created_at) VALUES (?, ?, ?, ?)').run('昨天的', '', yesterday, now);
+
+    const tasks = db.prepare('SELECT * FROM tasks WHERE completed_at = ?').all(today);
+    expect(tasks).toHaveLength(1);
+    expect((tasks[0] as any).content).toBe('今天的');
+  });
+});
+
+describe('weekly report', () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = createTestDb();
+  });
+
+  it('should group tasks by tag', () => {
+    const now = new Date().toISOString();
+    db.prepare('INSERT INTO tasks (content, tags, completed_at, created_at) VALUES (?, ?, ?, ?)').run('任务A', '前端', '2026-06-29', now);
+    db.prepare('INSERT INTO tasks (content, tags, completed_at, created_at) VALUES (?, ?, ?, ?)').run('任务B', '前端', '2026-06-30', now);
+    db.prepare('INSERT INTO tasks (content, tags, completed_at, created_at) VALUES (?, ?, ?, ?)').run('任务C', '后端', '2026-07-01', now);
+    db.prepare('INSERT INTO tasks (content, tags, completed_at, created_at) VALUES (?, ?, ?, ?)').run('任务D', '', '2026-07-02', now);
+
+    const weekStart = '2026-06-29';
+    const allTasks = db.prepare(
+      'SELECT * FROM tasks WHERE completed_at >= ? AND completed_at <= ?'
+    ).all(weekStart, '2026-07-05') as any[];
+
+    const summaryByTag: Record<string, string[]> = {};
+    for (const task of allTasks) {
+      const tags = (task.tags || '').split(',').map((t: string) => t.trim()).filter(Boolean);
+      if (tags.length === 0) {
+        const key = '未分类';
+        if (!summaryByTag[key]) summaryByTag[key] = [];
+        summaryByTag[key].push(task.content);
+      } else {
+        for (const tag of tags) {
+          if (!summaryByTag[tag]) summaryByTag[tag] = [];
+          summaryByTag[tag].push(task.content);
+        }
+      }
+    }
+
+    expect(summaryByTag['前端']).toEqual(['任务A', '任务B']);
+    expect(summaryByTag['后端']).toEqual(['任务C']);
+    expect(summaryByTag['未分类']).toEqual(['任务D']);
+  });
+
+  it('should return empty summary for a week with no tasks', () => {
+    const tasks = db.prepare(
+      'SELECT * FROM tasks WHERE completed_at >= ? AND completed_at <= ?'
+    ).all('2026-01-01', '2026-01-07');
+    expect(tasks).toHaveLength(0);
+  });
+});

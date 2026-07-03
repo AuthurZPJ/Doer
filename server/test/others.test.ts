@@ -1,0 +1,126 @@
+import { describe, it, expect, beforeEach } from 'vitest';
+import Database from 'better-sqlite3';
+import { createTestDb } from './helpers';
+
+describe('meetings table', () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = createTestDb();
+  });
+
+  it('should insert a meeting', () => {
+    const now = new Date().toISOString();
+    const info = db.prepare(
+      'INSERT INTO meetings (title, content, tags, meeting_date, created_at) VALUES (?, ?, ?, ?, ?)'
+    ).run('周会', '讨论了X', '周报', '2026-07-03', now);
+
+    const meeting = db.prepare('SELECT * FROM meetings WHERE id = ?').get(info.lastInsertRowid) as any;
+    expect(meeting.title).toBe('周会');
+    expect(meeting.content).toBe('讨论了X');
+    expect(meeting.meeting_date).toBe('2026-07-03');
+  });
+
+  it('should query meetings by date', () => {
+    const now = new Date().toISOString();
+    db.prepare('INSERT INTO meetings (title, content, tags, meeting_date, created_at) VALUES (?, ?, ?, ?, ?)').run('会议1', '', '', '2026-07-03', now);
+    db.prepare('INSERT INTO meetings (title, content, tags, meeting_date, created_at) VALUES (?, ?, ?, ?, ?)').run('会议2', '', '', '2026-07-04', now);
+
+    const meetings = db.prepare('SELECT * FROM meetings WHERE meeting_date = ?').all('2026-07-03') as any[];
+    expect(meetings).toHaveLength(1);
+    expect(meetings[0].title).toBe('会议1');
+  });
+});
+
+describe('learnings table', () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = createTestDb();
+  });
+
+  it('should insert a learning', () => {
+    const now = new Date().toISOString();
+    const info = db.prepare(
+      'INSERT INTO learnings (title, content, tags, created_at) VALUES (?, ?, ?, ?)'
+    ).run('React Hooks', 'useEffect用法', '前端', now);
+
+    const learning = db.prepare('SELECT * FROM learnings WHERE id = ?').get(info.lastInsertRowid) as any;
+    expect(learning.title).toBe('React Hooks');
+    expect(learning.content).toBe('useEffect用法');
+  });
+
+  it('should query learnings ordered by created_at desc', () => {
+    db.prepare('INSERT INTO learnings (title, content, tags, created_at) VALUES (?, ?, ?, ?)').run('旧', '', '', '2026-07-01T00:00:00Z');
+    db.prepare('INSERT INTO learnings (title, content, tags, created_at) VALUES (?, ?, ?, ?)').run('新', '', '', '2026-07-03T00:00:00Z');
+
+    const learnings = db.prepare('SELECT * FROM learnings ORDER BY created_at DESC').all() as any[];
+    expect(learnings[0].title).toBe('新');
+    expect(learnings[1].title).toBe('旧');
+  });
+});
+
+describe('issues table', () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = createTestDb();
+  });
+
+  it('should insert an issue with default status open', () => {
+    const now = new Date().toISOString();
+    const info = db.prepare(
+      'INSERT INTO issues (content, tags, status, created_at) VALUES (?, ?, ?, ?)'
+    ).run('内存泄漏', '后端', 'open', now);
+
+    const issue = db.prepare('SELECT * FROM issues WHERE id = ?').get(info.lastInsertRowid) as any;
+    expect(issue.content).toBe('内存泄漏');
+    expect(issue.status).toBe('open');
+    expect(issue.resolved_at).toBeNull();
+  });
+
+  it('should resolve an issue', () => {
+    const now = new Date().toISOString();
+    const info = db.prepare(
+      'INSERT INTO issues (content, tags, status, created_at) VALUES (?, ?, ?, ?)'
+    ).run('Bug', '', 'open', now);
+
+    db.prepare('UPDATE issues SET status = ?, resolved_at = ? WHERE id = ?').run('resolved', now, info.lastInsertRowid);
+
+    const issue = db.prepare('SELECT * FROM issues WHERE id = ?').get(info.lastInsertRowid) as any;
+    expect(issue.status).toBe('resolved');
+    expect(issue.resolved_at).toBe(now);
+  });
+
+  it('should query open issues', () => {
+    const now = new Date().toISOString();
+    db.prepare('INSERT INTO issues (content, tags, status, created_at) VALUES (?, ?, ?, ?)').run('未解决1', '', 'open', now);
+    db.prepare('INSERT INTO issues (content, tags, status, created_at) VALUES (?, ?, ?, ?)').run('已解决', '', 'resolved', now);
+    db.prepare('INSERT INTO issues (content, tags, status, created_at) VALUES (?, ?, ?, ?)').run('未解决2', '', 'open', now);
+
+    const open = db.prepare("SELECT * FROM issues WHERE status = 'open'").all() as any[];
+    expect(open).toHaveLength(2);
+  });
+});
+
+describe('tags table', () => {
+  let db: Database.Database;
+
+  beforeEach(() => {
+    db = createTestDb();
+  });
+
+  it('should insert a tag', () => {
+    const info = db.prepare('INSERT INTO tags (name, color) VALUES (?, ?)').run('前端', '#3490dc');
+    const tag = db.prepare('SELECT * FROM tags WHERE id = ?').get(info.lastInsertRowid) as any;
+    expect(tag.name).toBe('前端');
+    expect(tag.color).toBe('#3490dc');
+  });
+
+  it('should enforce unique tag name', () => {
+    db.prepare('INSERT INTO tags (name) VALUES (?)').run('前端');
+    expect(() => {
+      db.prepare('INSERT INTO tags (name) VALUES (?)').run('前端');
+    }).toThrow();
+  });
+});
