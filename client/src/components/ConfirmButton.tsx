@@ -26,13 +26,13 @@ export default function ConfirmButton({
               showToast('操作失败', 'error');
             }
           }}
-          className="text-red-600 dark:text-red-400 hover:text-red-800 text-sm font-medium"
+          className="text-red-600 dark:text-red-400 hover:text-red-800 text-sm font-medium transition-base"
         >
           确认
         </button>
         <button
           onClick={() => setConfirming(false)}
-          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 text-sm"
+          className="text-gray-500 dark:text-gray-400 hover:text-gray-700 text-sm transition-base"
         >
           取消
         </button>
@@ -41,7 +41,7 @@ export default function ConfirmButton({
   }
 
   return (
-    <button onClick={() => setConfirming(true)} className={className}>
+    <button onClick={() => setConfirming(true)} className={`${className} transition-base`}>
       {children}
     </button>
   );

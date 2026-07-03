@@ -56,36 +56,36 @@ export default function Learnings() {
   return (
     <div className="p-6 max-w-3xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">知识点</h1>
+        <h1 className="text-2xl font-bold tracking-tight">知识点</h1>
         <button
           onClick={() => setShowForm(!showForm)}
-          className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-base"
         >
           {showForm ? '取消' : '新建'}
         </button>
       </div>
 
       {showForm && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-6 fade-in">
           <div className="flex flex-col gap-3">
             <input
               type="text"
               value={title}
               onChange={e => setTitle(e.target.value)}
               placeholder="标题"
-              className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
+              className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-base"
             />
             <textarea
               value={content}
               onChange={e => setContent(e.target.value)}
               placeholder="内容"
               rows={5}
-              className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
+              className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-base"
             />
             <TagInput value={tags} onChange={setTags} />
             <button
               onClick={handleAdd}
-              className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 self-start"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 self-start transition-base"
             >
               保存
             </button>
@@ -94,13 +94,13 @@ export default function Learnings() {
       )}
 
       {loading ? (
-        <div className="text-gray-400 dark:text-gray-500">加载中...</div>
+        <div className="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500"><div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 mr-2"></div>加载中...</div>
       ) : learnings.length === 0 ? (
             <EmptyState message="暂无知识点" onRetry={load} />
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-2 slide-up">
           {learnings.map(l => (
-            <div key={l.id} className="bg-white dark:bg-gray-800 rounded-lg shadow">
+            <div key={l.id} className="bg-white dark:bg-gray-800 rounded-xl shadow transition-base hover:shadow-md">
               <button
                 onClick={() => setExpandedId(expandedId === l.id ? null : l.id)}
                 className="block w-full text-left p-4"

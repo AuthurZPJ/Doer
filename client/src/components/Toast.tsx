@@ -42,7 +42,7 @@ export function ToastContainer() {
       {toasts.map(t => (
         <div
           key={t.id}
-          className={`px-4 py-2 rounded shadow-lg text-white text-sm ${
+          className={`px-4 py-2 rounded-lg shadow-lg text-white text-sm slide-up ${
             t.type === 'success' ? 'bg-green-600' : 'bg-red-600'
           }`}
         >

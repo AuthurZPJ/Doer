@@ -125,9 +125,9 @@ export default function Todos() {
 
   return (
     <div className="p-6 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6">未来计划</h1>
+      <h1 className="text-2xl font-bold mb-6 tracking-tight">未来计划</h1>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-6 transition-base fade-in">
         <div className="flex flex-col gap-3">
           <input
             type="text"
@@ -135,13 +135,13 @@ export default function Todos() {
             onChange={e => setContent(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
             placeholder="计划做什么？"
-            className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
+            className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <div className="flex gap-3 items-center">
             <select
               value={priority}
               onChange={e => setPriority(e.target.value)}
-              className="border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm"
+              className="border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="high">高优先级</option>
               <option value="medium">中优先级</option>
@@ -155,7 +155,7 @@ export default function Todos() {
           <TagInput value={tags} onChange={setTags} />
           <button
             onClick={handleAdd}
-            className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 self-start"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-base hover:bg-blue-700 self-start"
           >
             添加
           </button>
@@ -163,19 +163,19 @@ export default function Todos() {
       </div>
 
       {loading ? (
-        <div className="text-gray-400 dark:text-gray-500">加载中...</div>
+        <div className="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500"><div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 mr-2"></div>加载中...</div>
       ) : todos.length === 0 ? (
-        <EmptyState message="没有未来计划" onRetry={load} />
+        <div className="fade-in"><EmptyState message="没有未来计划" onRetry={load} /></div>
       ) : (
         <div className="space-y-6">
           {groupTodos(todos).map(group => (
-            <div key={group.key}>
-              <h2 className={`text-sm font-semibold mb-2 ${group.color}`}>
+            <div key={group.key} className="slide-up">
+              <h2 className={`text-base font-bold mb-2 tracking-wide ${group.color}`}>
                 {group.label}（{group.items.length}）
               </h2>
               <div className="space-y-2">
                 {group.items.map(todo => (
-                  <div key={todo.id} className={`bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-l-4 ${priorityColors[todo.priority]}`}>
+                  <div key={todo.id} className={`bg-white dark:bg-gray-800 rounded-xl shadow p-4 border-l-4 transition-base hover:shadow-md ${priorityColors[todo.priority]}`}>
                     <div className="flex items-start justify-between">
                       <div className="flex-1">
                         <p className="text-sm">{todo.content}</p>

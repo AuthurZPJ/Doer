@@ -76,12 +76,12 @@ export default function Dashboard() {
     }
   };
 
-  if (loading) return <div className="p-8 text-gray-400 dark:text-gray-500">加载中...</div>;
+  if (loading) return <div className="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500"><div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 mr-2"></div>加载中...</div>;
 
   return (
     <div className="p-6">
       <div className="flex items-center gap-4 mb-6">
-        <h1 className="text-2xl font-bold">今日看板</h1>
+        <h1 className="text-2xl font-bold tracking-tight">今日看板</h1>
         <DatePicker
           value={date}
           onChange={setDate}
@@ -92,7 +92,7 @@ export default function Dashboard() {
         <select
           value={quickCategory}
           onChange={e => setQuickCategory(e.target.value)}
-          className="border border-gray-300 dark:border-gray-600 rounded px-2 py-2 text-sm"
+          className="border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-2 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         >
           <option value="tasks">正在做</option>
           <option value="todos">未来计划</option>
@@ -105,19 +105,19 @@ export default function Dashboard() {
           onChange={e => setQuickInput(e.target.value)}
           onKeyDown={e => { if (e.key === 'Enter') handleQuickAdd(); }}
           placeholder="快速记录..."
-          className="flex-1 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
+          className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
         <button
           onClick={handleQuickAdd}
-          className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-base hover:bg-blue-700"
         >
           添加
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 slide-up">
         <Card title="正在做" link="/tasks" count={data.inProgressTasks.length}>
-          {data.inProgressTasks.length === 0 ? <EmptyState message="暂无" /> : data.inProgressTasks.slice(0, 10).map((t: any) => (
+          {data.inProgressTasks.length === 0 ? <div className="fade-in"><EmptyState message="暂无" /></div> : data.inProgressTasks.slice(0, 10).map((t: any) => (
             <div key={t.id} className="text-sm py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
               {t.content}
               {t.tags && <span className="ml-2 text-xs text-blue-500 dark:text-blue-400">{t.tags}</span>}
@@ -129,7 +129,7 @@ export default function Dashboard() {
         </Card>
 
         <Card title="未来计划" link="/todos" count={data.todos.length}>
-          {data.todos.length === 0 ? <EmptyState message="暂无" /> : data.todos.slice(0, 10).map((t: any) => (
+          {data.todos.length === 0 ? <div className="fade-in"><EmptyState message="暂无" /></div> : data.todos.slice(0, 10).map((t: any) => (
             <div key={t.id} className="text-sm py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
               <span className={priorityColors[t.priority]}>●</span> {t.content}
               {isOverdue(t.due_date) && <span className="ml-1 text-xs text-red-500 dark:text-red-400">已逾期</span>}
@@ -139,7 +139,7 @@ export default function Dashboard() {
         </Card>
 
         <Card title="今日会议" link="/meetings" count={data.meetings.length}>
-          {data.meetings.length === 0 ? <EmptyState message="暂无" /> : data.meetings.map((m: any) => (
+          {data.meetings.length === 0 ? <div className="fade-in"><EmptyState message="暂无" /></div> : data.meetings.map((m: any) => (
             <div key={m.id} className="text-sm py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
               {m.title}
             </div>
@@ -147,7 +147,7 @@ export default function Dashboard() {
         </Card>
 
         <Card title="知识点" link="/learnings" count={data.learnings.length}>
-          {data.learnings.length === 0 ? <EmptyState message="暂无" /> : data.learnings.map((l: any) => (
+          {data.learnings.length === 0 ? <div className="fade-in"><EmptyState message="暂无" /></div> : data.learnings.map((l: any) => (
             <div key={l.id} className="text-sm py-1 border-b border-gray-100 dark:border-gray-700 last:border-0">
               {l.title}
             </div>
@@ -160,9 +160,9 @@ export default function Dashboard() {
 
 function Card({ title, link, count, children }: { title: string; link: string; count: number; children: React.ReactNode }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 flex flex-col">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 flex flex-col transition-base hover:shadow-md">
       <div className="flex items-center justify-between mb-2">
-        <h2 className="font-semibold text-gray-700 dark:text-gray-100">{title}</h2>
+        <h2 className="font-semibold text-gray-700 dark:text-gray-100 tracking-wide">{title}</h2>
         <span className="text-xs text-gray-400 dark:text-gray-500">{count}</span>
       </div>
       <div className="flex-1 min-h-[100px]">{children}</div>

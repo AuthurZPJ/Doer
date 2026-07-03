@@ -210,7 +210,7 @@ export default function Tasks() {
         onChange={e => setSubInputs(prev => ({ ...prev, [parentKey]: e.target.value }))}
         onKeyDown={e => { if (e.key === 'Enter') handleAddSubtask(taskId, parentKey, parentSubtaskId); }}
         placeholder="添加子项..."
-        className="flex-1 border border-gray-200 dark:border-gray-700 rounded px-2 py-1 text-sm"
+        className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg px-2 py-1 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
       />
       <button
         onClick={() => handleAddSubtask(taskId, parentKey, parentSubtaskId)}
@@ -231,7 +231,7 @@ export default function Tasks() {
               type="checkbox"
               checked={node.status === 'done'}
               onChange={() => handleToggleSubtask(taskId, node.id, node.status)}
-              className="rounded"
+              className="rounded cursor-pointer"
             />
             {isEditingSub ? (
               <input
@@ -244,7 +244,7 @@ export default function Tasks() {
                 }}
                 onBlur={cancelEditSub}
                 autoFocus
-                className="flex-1 border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm"
+                className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             ) : (
               <span
@@ -295,7 +295,7 @@ export default function Tasks() {
                 }}
                 onBlur={cancelEditTask}
                 autoFocus
-                className="w-full border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             ) : (
               <p
@@ -374,7 +374,7 @@ export default function Tasks() {
                 }}
                 onBlur={cancelEditTask}
                 autoFocus
-                className="w-full border border-gray-300 dark:border-gray-600 rounded px-2 py-1 text-sm"
+                className="w-full border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             ) : (
               <p
@@ -409,9 +409,9 @@ export default function Tasks() {
 
   return (
     <div className="p-6 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6">Doing</h1>
+      <h1 className="text-2xl font-bold mb-6 tracking-tight">Doing</h1>
 
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-6 transition-base fade-in">
         <div className="flex flex-col gap-3">
           <input
             type="text"
@@ -419,7 +419,7 @@ export default function Tasks() {
             onChange={e => setContent(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
             placeholder="开始做什么？"
-            className="border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
+            className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <div>
             <span className="block text-xs text-gray-400 dark:text-gray-500 mb-1">可选标签</span>
@@ -427,7 +427,7 @@ export default function Tasks() {
           </div>
           <button
             onClick={handleAdd}
-            className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 self-start"
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-base hover:bg-blue-700 self-start"
           >
             添加到正在做
           </button>
@@ -435,33 +435,33 @@ export default function Tasks() {
       </div>
 
       {loading ? (
-        <div className="text-gray-400 dark:text-gray-500">加载中...</div>
+        <div className="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500"><div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 mr-2"></div>加载中...</div>
       ) : (
         <>
-          <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">正在做 ({inProgress.length})</h2>
+          <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 tracking-wide">正在做 ({inProgress.length})</h2>
           {inProgress.length === 0 ? (
-            <EmptyState message="没有正在做的任务" />
+            <div className="fade-in"><EmptyState message="没有正在做的任务" /></div>
           ) : (
-            <div className="space-y-3 mb-6">
+            <div className="space-y-3 mb-6 slide-up">
               {inProgress.map(task => (
-                <div key={task.id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-l-4 border-blue-400">{renderInProgressTask(task)}</div>
+                <div key={task.id} className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 border-l-4 border-blue-400 transition-base hover:shadow-md">{renderInProgressTask(task)}</div>
               ))}
             </div>
           )}
 
           <div className="flex items-center gap-4 mb-2">
-            <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400">已经完成</h2>
+            <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 tracking-wide">已经完成</h2>
             <DatePicker
               value={date}
               onChange={setDate}
             />
           </div>
           {completed.length === 0 ? (
-            <EmptyState message="当天没有已完成的任务" onRetry={load} />
+            <div className="fade-in"><EmptyState message="当天没有已完成的任务" onRetry={load} /></div>
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 slide-up">
               {completed.map(task => (
-                <div key={task.id} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 border-l-4 border-green-400">{renderCompletedTask(task)}</div>
+                <div key={task.id} className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 border-l-4 border-green-400 transition-base hover:shadow-md">{renderCompletedTask(task)}</div>
               ))}
             </div>
           )}

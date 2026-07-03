@@ -267,28 +267,28 @@ export default function WeeklyReport() {
   return (
     <div className="p-6 max-w-3xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">周报</h1>
+        <h1 className="text-2xl font-bold tracking-tight">周报</h1>
         <div className="flex items-center gap-2">
-          <button onClick={handlePrevWeek} className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm hover:bg-gray-50 dark:hover:bg-gray-700">‹</button>
+          <button onClick={handlePrevWeek} className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-base">‹</button>
           <DatePicker value={weekStart} onChange={handleWeekPicker} />
           <span className="text-sm text-gray-500 dark:text-gray-400">{weekStart} ~ {weekEnd}</span>
-          <button onClick={handleNextWeek} className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm hover:bg-gray-50 dark:hover:bg-gray-700">›</button>
-          <button onClick={handleThisWeek} className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded text-sm hover:bg-gray-50 dark:hover:bg-gray-700">本周</button>
-          <button onClick={() => setShowExport(!showExport)} className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">导出</button>
+          <button onClick={handleNextWeek} className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-base">›</button>
+          <button onClick={handleThisWeek} className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-base">本周</button>
+          <button onClick={() => setShowExport(!showExport)} className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 transition-base">导出</button>
         </div>
       </div>
 
       {showExport && (
-        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
+        <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-4 fade-in">
           <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">导出选项</h3>
           <div className="flex flex-col gap-3">
             <button
               onClick={handleExport}
-              className="text-left px-3 py-2 border border-gray-300 dark:border-gray-600 rounded text-sm hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300"
+              className="text-left px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300 transition-base"
             >
               导出当前周 ({weekStart} ~ {weekEnd})
             </button>
-            <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded">
+            <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">
               <span className="text-sm text-gray-600 dark:text-gray-400">导出周区间:</span>
               <DatePicker value={exportFrom} onChange={(v) => setExportFrom(getWeekStart(v))} />
               <span className="text-gray-400">~</span>
@@ -297,19 +297,19 @@ export default function WeeklyReport() {
               <button
                 onClick={handleExportRange}
                 disabled={exporting}
-                className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 disabled:opacity-50 ml-auto"
+                className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50 ml-auto transition-base"
               >
                 {exporting ? '导出中...' : '导出'}
               </button>
             </div>
-            <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded">
+            <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg">
               <span className="text-sm text-gray-600 dark:text-gray-400">从指定周至本周:</span>
               <DatePicker value={exportFrom} onChange={(v) => setExportFrom(getWeekStart(v))} />
               <span className="text-xs text-gray-400">{exportFrom} ~ {addDays(getWeekStart(todayStr()), 6)}</span>
               <button
                 onClick={handleExportFromToThis}
                 disabled={exporting}
-                className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 disabled:opacity-50 ml-auto"
+                className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50 ml-auto transition-base"
               >
                 {exporting ? '导出中...' : '导出'}
               </button>
@@ -319,12 +319,12 @@ export default function WeeklyReport() {
       )}
 
       {loading ? (
-        <div className="text-gray-400 dark:text-gray-500">加载中...</div>
+        <div className="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500"><div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 mr-2"></div>加载中...</div>
       ) : !report || totalTasks === 0 ? (
         <EmptyState message="本周暂无记录" onRetry={load} />
       ) : (
         <>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4 mb-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-4 transition-base">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               本周共完成 {totalTasks} 项工作
               {report.subtask_stats && (
@@ -336,7 +336,7 @@ export default function WeeklyReport() {
           <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">每日完成</h2>
           <div className="space-y-3 mb-6">
             {report.days.map((day: any, i: number) => (
-              <div key={day.date} className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+              <div key={day.date} className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 transition-base">
                 <p className="text-sm font-medium mb-2 dark:text-gray-100">
                   {day.date} {weekdayNames[i]}
                   <span className="ml-2 text-xs text-gray-400 dark:text-gray-500">{day.tasks.length + (day.standalone_groups?.length || 0)} 项</span>
@@ -387,7 +387,7 @@ export default function WeeklyReport() {
           </div>
 
           <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">按标签汇总</h2>
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+          <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 transition-base">
             {Object.entries(report.summary_by_tag).map(([tag, items]) => (
               <div key={tag} className="mb-4 last:mb-0">
                 <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">{tag}</p>

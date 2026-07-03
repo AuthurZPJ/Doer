@@ -5,7 +5,7 @@ interface EmptyStateProps {
 
 export default function EmptyState({ message = '暂无数据', onRetry }: EmptyStateProps) {
   return (
-    <div className="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-gray-500">
+    <div className="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-gray-500 fade-in">
       <p>{message}</p>
       {onRetry && (
         <button

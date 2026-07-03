@@ -44,7 +44,7 @@ export default function SearchPage() {
 
   return (
     <div className="p-6 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6">全局搜索</h1>
+      <h1 className="text-2xl font-bold mb-6 tracking-tight">全局搜索</h1>
 
       <div className="flex gap-2 mb-6">
         <input
@@ -53,25 +53,25 @@ export default function SearchPage() {
           onChange={e => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="搜索任务、会议、学习、问题..."
-          className="flex-1 border border-gray-300 dark:border-gray-600 rounded px-3 py-2 text-sm"
+          className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-base"
         />
         <button
           onClick={() => doSearch(query)}
           disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded text-sm hover:bg-blue-700 disabled:opacity-50"
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50 transition-base"
         >
           {loading ? '搜索中...' : '搜索'}
         </button>
       </div>
 
       {searched && !loading && !hasResults && (
-        <div className="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-gray-500">
+        <div className="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-gray-500 fade-in">
           <p>暂无结果</p>
         </div>
       )}
 
       {hasResults && (
-        <div className="space-y-6">
+        <div className="space-y-6 slide-up">
           <Section title="Doing" count={results.tasks.length}>
             {results.tasks.map((t: any) => (
               <ResultCard
@@ -121,7 +121,7 @@ function Section({ title, count, children }: { title: string; count: number; chi
 
 function ResultCard({ preview, date, tags }: { preview: string; date: string; tags?: string }) {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-4">
+    <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 transition-base hover:shadow-md">
       <p className="text-sm dark:text-gray-100">{preview}</p>
       <div className="flex gap-3 mt-1 text-xs text-gray-400 dark:text-gray-500">
         {tags && <span className="text-blue-500 dark:text-blue-400">{tags}</span>}
