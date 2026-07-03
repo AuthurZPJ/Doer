@@ -3,3 +3,4 @@ server/data/
 dist/
 *.log
 .DS_Store
+release/
