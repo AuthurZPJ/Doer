@@ -73,6 +73,23 @@ function flattenToMarkdown(nodes: SubtaskNode[], depth: number): string {
   return out;
 }
 
+function copyToClipboard(text: string): boolean {
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text);
+    return true;
+  }
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch {}
+  document.body.removeChild(ta);
+  return ok;
+}
+
 export default function WeeklyReport() {
   const [weekStart, setWeekStart] = useState(getWeekStart(todayStr()));
   const [report, setReport] = useState<any>(null);
@@ -95,8 +112,12 @@ export default function WeeklyReport() {
   const handlePrevWeek = () => setWeekStart(addDays(weekStart, -7));
   const handleNextWeek = () => setWeekStart(addDays(weekStart, 7));
   const handleThisWeek = () => setWeekStart(getWeekStart(todayStr()));
+  const handleWeekPicker = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const picked = e.target.value;
+    if (picked) setWeekStart(getWeekStart(picked));
+  };
 
-  const weekEnd = report?.week_end || addDays(weekStart, 6);
+  const weekEnd = addDays(weekStart, 6);
   const totalTasks = report?.days?.reduce((sum: number, d: any) => sum + d.tasks.length + (d.standalone_groups?.length || 0), 0) || 0;
 
   const hasDayContent = (day: any) => day.tasks.length > 0 || (day.standalone_groups?.length || 0) > 0;
@@ -135,8 +156,8 @@ export default function WeeklyReport() {
       }
       md += '\n';
     }
-    navigator.clipboard.writeText(md);
-    showToast('已复制到剪贴板');
+    const ok = copyToClipboard(md);
+    showToast(ok ? '已复制到剪贴板' : '复制失败，请手动复制', ok ? 'success' : 'error');
   };
 
   return (
@@ -144,9 +165,15 @@ export default function WeeklyReport() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">周报</h1>
         <div className="flex items-center gap-2">
-          <button onClick={handlePrevWeek} className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50">上一周</button>
+          <button onClick={handlePrevWeek} className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50">‹</button>
+          <input
+            type="date"
+            value={weekStart}
+            onChange={handleWeekPicker}
+            className="border border-gray-300 rounded px-2 py-1 text-sm text-gray-600"
+          />
           <span className="text-sm text-gray-500">{weekStart} ~ {weekEnd}</span>
-          <button onClick={handleNextWeek} className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50">下一周</button>
+          <button onClick={handleNextWeek} className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50">›</button>
           <button onClick={handleThisWeek} className="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50">本周</button>
           <button onClick={handleExport} className="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">导出Markdown</button>
         </div>
