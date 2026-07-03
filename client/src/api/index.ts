@@ -47,6 +47,9 @@ export const tagsApi = {
 
 export const backupApi = {
   create: () => api.post('/backup').then(r => r.data),
+  list: () => api.get('/backup').then(r => r.data),
+  restore: (filename: string) => api.post('/backup/restore', { filename }).then(r => r.data),
+  delete: (filename: string) => api.delete('/backup', { data: { filename } }).then(r => r.data),
 };
 
 export const subtasksApi = {
