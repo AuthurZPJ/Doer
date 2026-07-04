@@ -37,6 +37,11 @@ npm run dev
 
 前端访问 http://localhost:5173，后端运行在 http://localhost:3001，启动后自动打开浏览器。
 
+> **Windows 用户注意**：
+> - 如果 `npm install` 报 SSL 证书错误（`UNABLE_TO_VERIFY_LEAF_SIGNATURE`），以管理员身份运行 PowerShell 执行：`npm config set strict-ssl false`，安装完成后恢复：`npm config set strict-ssl true`
+> - 如果 `npm install` 报 `EPERM` 权限错误，关闭所有使用 node_modules 的程序（如 VS Code、终端），删除 `node_modules` 文件夹后重试
+> - 开发模式 `npm run dev` 在 Windows 上可直接使用，无需额外配置
+
 ### 桌面模式 (Electron)
 
 ```bash

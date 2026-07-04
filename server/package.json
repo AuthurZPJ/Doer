@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch --no-warnings src/index.ts",
-    "build": "tsc && cp src/db/schema.sql dist/db/schema.sql",
+    "build": "tsc && node ../scripts/copy-schema.mjs",
     "test": "vitest run"
   },
   "dependencies": {

@@ -37,6 +37,11 @@ npm run dev
 
 Frontend at http://localhost:5173, backend at http://localhost:3001, auto-opens browser on start.
 
+> **Windows notes**:
+> - If `npm install` fails with SSL error (`UNABLE_TO_VERIFY_LEAF_SIGNATURE`), run as Administrator: `npm config set strict-ssl false`, then restore after install: `npm config set strict-ssl true`
+> - If `npm install` fails with `EPERM`, close all programs using `node_modules` (VS Code, terminals), delete the `node_modules` folder and retry
+> - Dev mode `npm run dev` works on Windows without extra configuration
+
 ### Desktop Mode (Electron)
 
 ```bash
