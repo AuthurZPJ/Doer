@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { tagsApi } from '../api';
 import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
@@ -10,6 +11,7 @@ const presetColors = [
 ];
 
 export default function TagsPage() {
+  const { t } = useTranslation();
   const [tags, setTags] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
@@ -24,7 +26,7 @@ export default function TagsPage() {
       const result = await tagsApi.list();
       setTags(result);
     } catch {
-      showToast('加载失败', 'error');
+      showToast(t('common.loadFail'), 'error');
     } finally {
       setLoading(false);
     }
@@ -38,10 +40,10 @@ export default function TagsPage() {
       await tagsApi.create({ name: newName.trim(), color: newColor });
       setNewName('');
       setNewColor(presetColors[0]);
-      showToast('添加成功');
+      showToast(t('common.addSuccess'));
       load();
     } catch {
-      showToast('标签已存在', 'error');
+      showToast(t('common.tagExists'), 'error');
     }
   };
 
@@ -56,26 +58,26 @@ export default function TagsPage() {
     try {
       await tagsApi.update(editingId, { name: editName.trim(), color: editColor });
       setEditingId(null);
-      showToast('保存成功');
+      showToast(t('tags.tagSaved'));
       load();
     } catch {
-      showToast('标签名已存在', 'error');
+      showToast(t('common.tagNameExists'), 'error');
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
       await tagsApi.delete(id);
-      showToast('删除成功');
+      showToast(t('tags.tagDeleted'));
       load();
     } catch {
-      showToast('删除失败', 'error');
+      showToast(t('common.deleteFail'), 'error');
     }
   };
 
   return (
     <div className="p-6 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6 tracking-tight">标签管理</h1>
+      <h1 className="text-2xl font-bold mb-6 tracking-tight">{t('tags.title')}</h1>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-6 fade-in">
         <div className="flex flex-col gap-3">
@@ -85,7 +87,7 @@ export default function TagsPage() {
               value={newName}
               onChange={e => setNewName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
-              placeholder="标签名称"
+              placeholder={t('tags.namePlaceholder')}
               className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-base"
             />
             <div className="flex gap-1">
@@ -103,15 +105,15 @@ export default function TagsPage() {
             onClick={handleAdd}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 self-start transition-base"
           >
-            添加标签
+            {t('tags.addTag')}
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500"><div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 mr-2"></div>加载中...</div>
+        <div className="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500"><div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 mr-2"></div>{t('common.loading')}</div>
       ) : tags.length === 0 ? (
-        <EmptyState message="还没有标签，创建一个吧" />
+        <EmptyState message={t('tags.noTags')} />
       ) : (
         <div className="bg-white dark:bg-gray-800 rounded-xl shadow divide-y divide-gray-100 dark:divide-gray-700 slide-up">
           {tags.map(tag => (
@@ -136,8 +138,8 @@ export default function TagsPage() {
                       />
                     ))}
                   </div>
-                  <button onClick={handleSaveEdit} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 transition-base">保存</button>
-                  <button onClick={() => setEditingId(null)} className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 transition-base">取消</button>
+                  <button onClick={handleSaveEdit} className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800 transition-base">{t('common.save')}</button>
+                  <button onClick={() => setEditingId(null)} className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 transition-base">{t('common.cancel')}</button>
                 </div>
               ) : (
                 <>
@@ -149,7 +151,7 @@ export default function TagsPage() {
                     <span className="text-sm">{tag.name}</span>
                   </div>
                   <div className="flex gap-3">
-                    <button onClick={() => handleEdit(tag)} className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 transition-base">编辑</button>
+                    <button onClick={() => handleEdit(tag)} className="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 transition-base">{t('common.edit')}</button>
                     <ConfirmButton onConfirm={() => handleDelete(tag.id)} />
                   </div>
                 </>

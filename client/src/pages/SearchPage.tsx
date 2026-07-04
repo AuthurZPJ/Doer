@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { searchApi } from '../api';
 import { showToast } from '../components/Toast';
 
@@ -12,6 +13,7 @@ interface SearchResults {
 const EMPTY: SearchResults = { tasks: [], todos: [], meetings: [], learnings: [] };
 
 export default function SearchPage() {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<SearchResults>(EMPTY);
   const [searched, setSearched] = useState(false);
@@ -26,7 +28,7 @@ export default function SearchPage() {
       setResults(data);
       setSearched(true);
     } catch {
-      showToast('搜索失败', 'error');
+      showToast(t('common.loadFail'), 'error');
     } finally {
       setLoading(false);
     }
@@ -44,7 +46,7 @@ export default function SearchPage() {
 
   return (
     <div className="p-6 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6 tracking-tight">全局搜索</h1>
+      <h1 className="text-2xl font-bold mb-6 tracking-tight">{t('search.title')}</h1>
 
       <div className="flex gap-2 mb-6">
         <input
@@ -52,7 +54,7 @@ export default function SearchPage() {
           value={query}
           onChange={e => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="搜索任务、会议、知识点..."
+          placeholder={t('search.placeholder')}
           className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-base"
         />
         <button
@@ -60,19 +62,19 @@ export default function SearchPage() {
           disabled={loading}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50 transition-base"
         >
-          {loading ? '搜索中...' : '搜索'}
+          {loading ? t('common.searching') : t('common.search')}
         </button>
       </div>
 
       {searched && !loading && !hasResults && (
         <div className="flex flex-col items-center justify-center py-8 text-gray-400 dark:text-gray-500 fade-in">
-          <p>暂无结果</p>
+          <p>{t('search.noResults')}</p>
         </div>
       )}
 
       {hasResults && (
         <div className="space-y-6 slide-up">
-          <Section title="Doing" count={results.tasks.length}>
+          <Section title={t('search.sectionDoing')} count={results.tasks.length}>
             {results.tasks.map((t: any) => (
               <ResultCard
                 key={t.id}
@@ -83,7 +85,7 @@ export default function SearchPage() {
             ))}
           </Section>
 
-          <Section title="未来计划" count={results.todos.length}>
+          <Section title={t('search.sectionTodos')} count={results.todos.length}>
             {results.todos.map((t: any) => (
               <ResultCard
                 key={t.id}
@@ -94,7 +96,7 @@ export default function SearchPage() {
             ))}
           </Section>
 
-          <Section title="会议记录" count={results.meetings.length}>
+          <Section title={t('search.sectionMeetings')} count={results.meetings.length}>
             {results.meetings.map((m: any) => (
               <ResultCard
                 key={m.id}
@@ -105,7 +107,7 @@ export default function SearchPage() {
             ))}
           </Section>
 
-          <Section title="知识点" count={results.learnings.length}>
+          <Section title={t('search.sectionKnowledge')} count={results.learnings.length}>
             {results.learnings.map((l: any) => (
               <ResultCard
                 key={l.id}

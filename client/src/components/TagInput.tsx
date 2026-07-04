@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { tagsApi } from '../api';
 
 interface TagInfo {
@@ -12,6 +13,7 @@ interface TagInputProps {
 }
 
 export default function TagInput({ value, onChange }: TagInputProps) {
+  const { t } = useTranslation();
   const [tags, setTags] = useState<TagInfo[]>([]);
   const [input, setInput] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -78,7 +80,7 @@ export default function TagInput({ value, onChange }: TagInputProps) {
             }
           }}
           onFocus={() => { fetchTags(); setShowSuggestions(true); }}
-          placeholder={currentTags.length === 0 ? '可选标签' : ''}
+          placeholder={currentTags.length === 0 ? t('common.optionalTags') : ''}
           className="flex-1 min-w-[60px] outline-none text-sm"
         />
       </div>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { tasksApi, subtasksApi } from '../api';
 import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
@@ -46,6 +47,7 @@ function AddChildInput({ taskId, parentKey, parentSubtaskId, value, onChange, on
   onChange: (v: string) => void;
   onSubmit: (taskId: number, parentKey: string, parentSubtaskId: number | null) => void;
 }) {
+  const { t } = useTranslation();
   const [active, setActive] = useState(false);
 
   if (!active) {
@@ -54,7 +56,7 @@ function AddChildInput({ taskId, parentKey, parentSubtaskId, value, onChange, on
         onClick={() => setActive(true)}
         className="text-xs text-gray-400 dark:text-gray-500 hover:text-blue-500 dark:hover:text-blue-400 transition-base py-0.5"
       >
-        + 添加子项
+        {t('tasks.addSubtask')}
       </button>
     );
   }
@@ -70,7 +72,7 @@ function AddChildInput({ taskId, parentKey, parentSubtaskId, value, onChange, on
           if (e.key === 'Escape') { setActive(false); onChange(''); }
         }}
         onBlur={() => { if (!value.trim()) setActive(false); }}
-        placeholder="输入子项内容..."
+        placeholder={t('tasks.subtaskPlaceholder')}
         autoFocus
         className="flex-1 border border-gray-200 dark:border-gray-700 rounded-lg px-2.5 py-1 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-gray-50 dark:bg-gray-700/50"
       />
@@ -78,7 +80,7 @@ function AddChildInput({ taskId, parentKey, parentSubtaskId, value, onChange, on
         onClick={() => { onSubmit(taskId, parentKey, parentSubtaskId); setActive(false); }}
         className="text-xs bg-blue-600 text-white px-2.5 py-1 rounded-lg hover:bg-blue-700 transition-base"
       >
-        添加
+        {t('common.add')}
       </button>
       <button
         onClick={() => { setActive(false); onChange(''); }}
@@ -91,6 +93,7 @@ function AddChildInput({ taskId, parentKey, parentSubtaskId, value, onChange, on
 }
 
 export default function Tasks() {
+  const { t } = useTranslation();
   const [date, setDate] = useState(todayStr());
   const [inProgress, setInProgress] = useState<any[]>([]);
   const [completed, setCompleted] = useState<any[]>([]);
@@ -126,7 +129,7 @@ export default function Tasks() {
       });
       setSubtaskMap(map);
     } catch {
-      showToast('加载失败', 'error');
+      showToast(t('common.loadFail'), 'error');
     } finally {
       setLoading(false);
     }
@@ -145,40 +148,40 @@ export default function Tasks() {
       await tasksApi.create({ content: content.trim(), tags });
       setContent('');
       setTags('');
-      showToast('添加成功');
+      showToast(t('common.addSuccess'));
       load();
     } catch {
-      showToast('添加失败', 'error');
+      showToast(t('common.addFail'), 'error');
     }
   };
 
   const handleComplete = async (id: number) => {
     try {
       await tasksApi.update(id, { status: 'completed' });
-      showToast('已完成');
+      showToast(t('common.complete'));
       load();
     } catch {
-      showToast('操作失败', 'error');
+      showToast(t('common.operateFail'), 'error');
     }
   };
 
   const handleReopen = async (id: number) => {
     try {
       await tasksApi.update(id, { status: 'in_progress' });
-      showToast('已重新打开');
+      showToast(t('common.reopened'));
       load();
     } catch {
-      showToast('操作失败', 'error');
+      showToast(t('common.operateFail'), 'error');
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
       await tasksApi.delete(id);
-      showToast('删除成功');
+      showToast(t('common.deleteSuccess'));
       load();
     } catch {
-      showToast('删除失败', 'error');
+      showToast(t('common.deleteFail'), 'error');
     }
   };
 
@@ -194,10 +197,10 @@ export default function Tasks() {
     try {
       await tasksApi.update(editingTaskId, { content: val });
       setEditingTaskId(null);
-      showToast('保存成功');
+      showToast(t('common.saveSuccess'));
       load();
     } catch {
-      showToast('保存失败', 'error');
+      showToast(t('common.saveFail'), 'error');
     }
   };
 
@@ -209,7 +212,7 @@ export default function Tasks() {
       setSubInputs(prev => ({ ...prev, [parentKey]: '' }));
       await refreshSubtasks(taskId);
     } catch {
-      showToast('添加失败', 'error');
+      showToast(t('common.addFail'), 'error');
     }
   };
 
@@ -218,7 +221,7 @@ export default function Tasks() {
       await subtasksApi.update(taskId, subId, { status: currentStatus === 'pending' ? 'done' : 'pending' });
       await refreshSubtasks(taskId);
     } catch {
-      showToast('操作失败', 'error');
+      showToast(t('common.operateFail'), 'error');
     }
   };
 
@@ -227,7 +230,7 @@ export default function Tasks() {
       await subtasksApi.delete(taskId, subId);
       await refreshSubtasks(taskId);
     } catch {
-      showToast('删除失败', 'error');
+      showToast(t('common.deleteFail'), 'error');
     }
   };
 
@@ -245,9 +248,9 @@ export default function Tasks() {
       await subtasksApi.update(taskId, subId, { content: val });
       setEditingSub(null);
       await refreshSubtasks(taskId);
-      showToast('保存成功');
+      showToast(t('common.saveSuccess'));
     } catch {
-      showToast('保存失败', 'error');
+      showToast(t('common.saveFail'), 'error');
     }
   };
 
@@ -299,7 +302,7 @@ export default function Tasks() {
             onClick={() => handleDeleteSubtask(taskId, node.id)}
             className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-base shrink-0 ml-2"
           >
-            删除
+            {t('common.delete')}
           </button>
         </div>
         {hasChildren && (
@@ -354,11 +357,11 @@ export default function Tasks() {
               <span>{formatTime(task.created_at)}</span>
               {task.due_date && (
                 <span className={task.due_date < todayStr() ? 'text-red-500 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'}>
-                  截止: {task.due_date}{task.due_date < todayStr() ? ' (已逾期)' : ''}
+                  {t('tasks.dueDate')}: {task.due_date}{task.due_date < todayStr() ? ` (${t('tasks.overdue')})` : ''}
                 </span>
               )}
               {flat.length > 0 && (
-                <span className="text-gray-500 dark:text-gray-400">{doneCount}/{flat.length} 子项</span>
+                <span className="text-gray-500 dark:text-gray-400">{doneCount}/{flat.length} {t('tasks.subtaskCount')}</span>
               )}
             </div>
           </div>
@@ -367,7 +370,7 @@ export default function Tasks() {
               onClick={() => handleComplete(task.id)}
               className="text-sm text-green-600 dark:text-green-400 hover:text-green-800"
             >
-              完成
+              {t('common.complete')}
             </button>
             <ConfirmButton onConfirm={() => handleDelete(task.id)} />
           </div>
@@ -397,7 +400,7 @@ export default function Tasks() {
           {node.content}
         </span>
         <span className="text-xs text-gray-400 dark:text-gray-500">
-          {node.status === 'done' && node.done_at ? `✓ ${formatTime(node.done_at)}` : '未完成'}
+          {node.status === 'done' && node.done_at ? `✓ ${formatTime(node.done_at)}` : t('tasks.notCompleted')}
         </span>
       </div>
       {node.children.length > 0 && (
@@ -439,14 +442,14 @@ export default function Tasks() {
             <div className="flex gap-2 mt-0.5 text-xs text-gray-400 dark:text-gray-500">
               {task.tags && <span className="text-blue-500 dark:text-blue-400">{task.tags}</span>}
               <span>{task.completed_at ? new Date(task.completed_at).toLocaleDateString() : new Date(task.created_at).toLocaleDateString()}</span>
-              {task.due_date && <span>截止: {task.due_date}</span>}
+              {task.due_date && <span>{t('tasks.dueDate')}: {task.due_date}</span>}
               {flat.length > 0 && (
-                <span className="text-gray-500 dark:text-gray-400">{flat.filter((s: any) => s.status === 'done').length}/{flat.length} 子项</span>
+                <span className="text-gray-500 dark:text-gray-400">{flat.filter((s: any) => s.status === 'done').length}/{flat.length} {t('tasks.subtaskCount')}</span>
               )}
             </div>
           </div>
           <div className="flex gap-3 shrink-0">
-            <button onClick={() => handleReopen(task.id)} className="text-sm text-yellow-600 dark:text-yellow-400 hover:text-yellow-800">重新打开</button>
+            <button onClick={() => handleReopen(task.id)} className="text-sm text-yellow-600 dark:text-yellow-400 hover:text-yellow-800">{t('common.reopen')}</button>
             <ConfirmButton onConfirm={() => handleDelete(task.id)} />
           </div>
         </div>
@@ -461,7 +464,7 @@ export default function Tasks() {
 
   return (
     <div className="p-6 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6 tracking-tight">Doing</h1>
+      <h1 className="text-2xl font-bold mb-6 tracking-tight">{t('tasks.title')}</h1>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-6 transition-base fade-in">
         <div className="flex flex-col gap-3">
@@ -470,29 +473,29 @@ export default function Tasks() {
             value={content}
             onChange={e => setContent(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
-            placeholder="开始做什么？"
+            placeholder={t('tasks.startWhat')}
             className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <div>
-            <span className="block text-xs text-gray-400 dark:text-gray-500 mb-1">可选标签</span>
+            <span className="block text-xs text-gray-400 dark:text-gray-500 mb-1">{t('common.optionalTags')}</span>
             <TagInput value={tags} onChange={setTags} />
           </div>
           <button
             onClick={handleAdd}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-base hover:bg-blue-700 self-start"
           >
-            添加到正在做
+            {t('tasks.addToDoing')}
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500"><div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 mr-2"></div>加载中...</div>
+        <div className="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500"><div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 mr-2"></div>{t('common.loading')}</div>
       ) : (
         <>
-          <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 tracking-wide">正在做 ({inProgress.length})</h2>
+          <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2 tracking-wide">{t('tasks.inProgress')} ({inProgress.length})</h2>
           {inProgress.length === 0 ? (
-            <div className="fade-in"><EmptyState message="没有正在做的任务" /></div>
+            <div className="fade-in"><EmptyState message={t('tasks.noInProgress')} /></div>
           ) : (
             <div className="space-y-3 mb-6 slide-up">
               {inProgress.map(task => (
@@ -502,14 +505,14 @@ export default function Tasks() {
           )}
 
           <div className="flex items-center gap-4 mb-2">
-            <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 tracking-wide">已经完成</h2>
+            <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 tracking-wide">{t('tasks.completed')}</h2>
             <DatePicker
               value={date}
               onChange={setDate}
             />
           </div>
           {completed.length === 0 ? (
-            <div className="fade-in"><EmptyState message="当天没有已完成的任务" onRetry={load} /></div>
+            <div className="fade-in"><EmptyState message={t('tasks.noCompleted')} onRetry={load} /></div>
           ) : (
             <div className="space-y-3 slide-up">
               {completed.map(task => (

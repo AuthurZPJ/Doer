@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { meetingsApi } from '../api';
 import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
@@ -8,6 +9,7 @@ import DatePicker from '../components/DatePicker';
 import { todayStr } from '../utils/date';
 
 export default function Meetings() {
+  const { t } = useTranslation();
   const [meetings, setMeetings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -29,7 +31,7 @@ export default function Meetings() {
       setMeetings(result);
       setSelectedId(prev => (prev !== null && result.some((m: any) => m.id === prev)) ? prev : (result.length > 0 ? result[0].id : null));
     } catch {
-      showToast('加载失败', 'error');
+      showToast(t('common.loadFail'), 'error');
     } finally {
       setLoading(false);
     }
@@ -48,10 +50,10 @@ export default function Meetings() {
       setTags('');
       setMeetingDate(todayStr());
       setShowForm(false);
-      showToast('添加成功');
+      showToast(t('common.addSuccess'));
       load();
     } catch {
-      showToast('添加失败', 'error');
+      showToast(t('common.addFail'), 'error');
     }
   };
 
@@ -59,10 +61,10 @@ export default function Meetings() {
     try {
       await meetingsApi.delete(id);
       if (selectedId === id) setSelectedId(null);
-      showToast('删除成功');
+      showToast(t('common.deleteSuccess'));
       load();
     } catch {
-      showToast('删除失败', 'error');
+      showToast(t('common.deleteFail'), 'error');
     }
   };
 
@@ -89,22 +91,22 @@ export default function Meetings() {
         meeting_date: editDate,
       });
       setEditingId(null);
-      showToast('保存成功');
+      showToast(t('common.saveSuccess'));
       load();
     } catch {
-      showToast('保存失败', 'error');
+      showToast(t('common.saveFail'), 'error');
     }
   };
 
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">会议记录</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t('meetings.title')}</h1>
         <button
           onClick={() => setShowForm(!showForm)}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-base hover:bg-blue-700"
         >
-          {showForm ? '取消' : '新建会议'}
+          {showForm ? t('common.cancel') : t('meetings.newMeeting')}
         </button>
       </div>
 
@@ -115,13 +117,13 @@ export default function Meetings() {
               type="text"
               value={title}
               onChange={e => setTitle(e.target.value)}
-              placeholder="会议标题"
+              placeholder={t('meetings.meetingTitle')}
               className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <textarea
               value={content}
               onChange={e => setContent(e.target.value)}
-              placeholder="会议内容"
+              placeholder={t('meetings.meetingContent')}
               rows={6}
               className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
@@ -136,16 +138,16 @@ export default function Meetings() {
               onClick={handleAdd}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-base hover:bg-blue-700 self-start"
             >
-              保存
+              {t('common.save')}
             </button>
           </div>
         </div>
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500"><div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 mr-2"></div>加载中...</div>
+        <div className="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500"><div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 mr-2"></div>{t('common.loading')}</div>
       ) : meetings.length === 0 ? (
-        <div className="fade-in"><EmptyState message="暂无会议记录" onRetry={load} /></div>
+        <div className="fade-in"><EmptyState message={t('meetings.noMeetings')} onRetry={load} /></div>
       ) : (
         <div className="flex gap-4">
           <div className="w-64 shrink-0">
@@ -171,13 +173,13 @@ export default function Meetings() {
                       type="text"
                       value={editTitle}
                       onChange={e => setEditTitle(e.target.value)}
-                      placeholder="会议标题"
+                      placeholder={t('meetings.meetingTitle')}
                       className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                     <textarea
                       value={editContent}
                       onChange={e => setEditContent(e.target.value)}
-                      placeholder="会议内容"
+                      placeholder={t('meetings.meetingContent')}
                       rows={6}
                       className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
@@ -193,13 +195,13 @@ export default function Meetings() {
                         onClick={handleSaveEdit}
                         className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-base hover:bg-blue-700"
                       >
-                        保存
+                        {t('common.save')}
                       </button>
                       <button
                         onClick={cancelEdit}
                         className="border border-gray-300 dark:border-gray-600 px-4 py-2 rounded-lg text-sm transition-base hover:bg-gray-50 dark:hover:bg-gray-700"
                       >
-                        取消
+                        {t('common.cancel')}
                       </button>
                     </div>
                   </div>
@@ -217,16 +219,16 @@ export default function Meetings() {
                         onClick={startEdit}
                         className="text-sm text-blue-600 dark:text-blue-400 hover:text-blue-800"
                       >
-                        编辑
+                        {t('common.edit')}
                       </button>
                       <ConfirmButton onConfirm={() => handleDelete(selected.id)} />
                     </div>
                   </div>
-                  <div className="text-sm whitespace-pre-wrap">{selected.content || '（无内容）'}</div>
+                  <div className="text-sm whitespace-pre-wrap">{selected.content || t('meetings.noContent')}</div>
                 </div>
               )
             ) : (
-              <div className="fade-in"><EmptyState message="选择左侧会议查看详情" /></div>
+              <div className="fade-in"><EmptyState message={t('meetings.selectMeeting')} /></div>
             )}
           </div>
         </div>

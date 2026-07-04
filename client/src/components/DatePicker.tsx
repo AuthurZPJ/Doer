@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { todayStr, parseLocalDate } from '../utils/date';
 
 interface DatePickerProps {
@@ -7,10 +8,8 @@ interface DatePickerProps {
   className?: string;
 }
 
-const monthNames = ['一月', '二月', '三月', '四月', '五月', '六月', '七月', '八月', '九月', '十月', '十一月', '十二月'];
-const weekdayNames = ['一', '二', '三', '四', '五', '六', '日'];
-
 export default function DatePicker({ value, onChange, className = '' }: DatePickerProps) {
+  const { t, i18n } = useTranslation();
   const [open, setOpen] = useState(false);
   const [viewYear, setViewYear] = useState(() => value ? parseLocalDate(value).getFullYear() : new Date().getFullYear());
   const [viewMonth, setViewMonth] = useState(() => value ? parseLocalDate(value).getMonth() : new Date().getMonth());
@@ -45,6 +44,11 @@ export default function DatePicker({ value, onChange, className = '' }: DatePick
     days.push(dateStr);
   }
 
+  const monthName = new Date(viewYear, viewMonth, 1).toLocaleDateString(i18n.language, { month: 'long' });
+  const weekdayNames = Array.from({ length: 7 }, (_, i) =>
+    new Date(2024, 0, 1 + i).toLocaleDateString(i18n.language, { weekday: 'narrow' })
+  );
+
   const prevMonth = () => {
     if (viewMonth === 0) { setViewYear(viewYear - 1); setViewMonth(11); }
     else setViewMonth(viewMonth - 1);
@@ -61,18 +65,18 @@ export default function DatePicker({ value, onChange, className = '' }: DatePick
           onClick={() => setOpen(!open)}
           className="border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 text-sm bg-white dark:bg-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-700 min-w-[120px] transition-base"
         >
-          {value || '选择日期'}
+          {value || t('datePicker.selectDate')}
         </button>
         {open && (
           <div className="absolute z-50 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl p-4 w-72 fade-in">
             <div className="flex items-center justify-between mb-3">
               <button onClick={prevMonth} className="px-2 py-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-lg transition-base">‹</button>
-              <span className="text-sm font-medium dark:text-gray-200">{viewYear} {monthNames[viewMonth]}</span>
+              <span className="text-sm font-medium dark:text-gray-200">{viewYear} {monthName}</span>
               <button onClick={nextMonth} className="px-2 py-1 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-lg transition-base">›</button>
             </div>
           <div className="grid grid-cols-7 gap-1 mb-1">
-            {weekdayNames.map(w => (
-              <div key={w} className="text-center text-xs text-gray-400 font-medium py-1">{w}</div>
+            {weekdayNames.map((w, i) => (
+              <div key={i} className="text-center text-xs text-gray-400 font-medium py-1">{w}</div>
             ))}
           </div>
           <div className="grid grid-cols-7 gap-1">

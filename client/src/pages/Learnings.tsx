@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { learningsApi } from '../api';
 import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
@@ -6,6 +7,7 @@ import TagInput from '../components/TagInput';
 import ConfirmButton from '../components/ConfirmButton';
 
 export default function Learnings() {
+  const { t } = useTranslation();
   const [learnings, setLearnings] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -20,7 +22,7 @@ export default function Learnings() {
       const result = await learningsApi.list();
       setLearnings(result);
     } catch {
-      showToast('加载失败', 'error');
+      showToast(t('common.loadFail'), 'error');
     } finally {
       setLoading(false);
     }
@@ -36,32 +38,32 @@ export default function Learnings() {
       setContent('');
       setTags('');
       setShowForm(false);
-      showToast('添加成功');
+      showToast(t('common.addSuccess'));
       load();
     } catch {
-      showToast('添加失败', 'error');
+      showToast(t('common.addFail'), 'error');
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
       await learningsApi.delete(id);
-      showToast('删除成功');
+      showToast(t('common.deleteSuccess'));
       load();
     } catch {
-      showToast('删除失败', 'error');
+      showToast(t('common.deleteFail'), 'error');
     }
   };
 
   return (
     <div className="p-6 max-w-3xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">知识点</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{t('learnings.title')}</h1>
         <button
           onClick={() => setShowForm(!showForm)}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-base"
         >
-          {showForm ? '取消' : '新建'}
+          {showForm ? t('common.cancel') : t('learnings.newItem')}
         </button>
       </div>
 
@@ -72,13 +74,13 @@ export default function Learnings() {
               type="text"
               value={title}
               onChange={e => setTitle(e.target.value)}
-              placeholder="标题"
+              placeholder={t('learnings.titlePlaceholder')}
               className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-base"
             />
             <textarea
               value={content}
               onChange={e => setContent(e.target.value)}
-              placeholder="内容"
+              placeholder={t('learnings.contentPlaceholder')}
               rows={5}
               className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-base"
             />
@@ -87,16 +89,16 @@ export default function Learnings() {
               onClick={handleAdd}
               className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 self-start transition-base"
             >
-              保存
+              {t('common.save')}
             </button>
           </div>
         </div>
       )}
 
       {loading ? (
-        <div className="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500"><div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 mr-2"></div>加载中...</div>
+        <div className="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500"><div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 mr-2"></div>{t('common.loading')}</div>
       ) : learnings.length === 0 ? (
-            <EmptyState message="暂无知识点" onRetry={load} />
+            <EmptyState message={t('learnings.noLearnings')} onRetry={load} />
       ) : (
         <div className="space-y-2 slide-up">
           {learnings.map(l => (
@@ -117,7 +119,7 @@ export default function Learnings() {
               {expandedId === l.id && (
                 <div className="px-4 pb-4">
                   <div className="text-sm whitespace-pre-wrap text-gray-600 dark:text-gray-400 border-t border-gray-100 dark:border-gray-700 pt-3">
-                    {l.content || '（无内容）'}
+                    {l.content || t('meetings.noContent')}
                   </div>
                   <div className="mt-3">
                     <ConfirmButton onConfirm={() => handleDelete(l.id)} />

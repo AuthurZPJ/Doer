@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { todosApi } from '../api';
 import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
@@ -6,12 +7,6 @@ import TagInput from '../components/TagInput';
 import ConfirmButton from '../components/ConfirmButton';
 import DatePicker from '../components/DatePicker';
 import { todayStr } from '../utils/date';
-
-const priorityLabels: Record<string, string> = {
-  high: '高',
-  medium: '中',
-  low: '低',
-};
 
 const priorityColors: Record<string, string> = {
   high: 'border-l-red-500 dark:border-l-red-500',
@@ -30,7 +25,7 @@ function sortByPriority(arr: any[]): any[] {
   return [...arr].sort((a, b) => (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2));
 }
 
-function groupTodos(todos: any[]): { key: string; label: string; color: string; items: any[] }[] {
+function groupTodos(todos: any[]): { key: string; labelKey: string; color: string; items: any[] }[] {
   const today = todayStr();
   const groups: Record<string, any[]> = { overdue: [], today: [], soon: [], none: [], later: [] };
   for (const t of todos) {
@@ -47,11 +42,11 @@ function groupTodos(todos: any[]): { key: string; label: string; color: string; 
     }
   }
   const meta = [
-    { key: 'overdue', label: '已逾期', color: 'text-red-600 dark:text-red-400' },
-    { key: 'today', label: '今天截止', color: 'text-orange-600' },
-    { key: 'soon', label: '即将截止', color: 'text-yellow-600 dark:text-yellow-400' },
-    { key: 'none', label: '无截止日期', color: 'text-gray-500 dark:text-gray-400' },
-    { key: 'later', label: '以后', color: 'text-gray-500 dark:text-gray-400' },
+    { key: 'overdue', labelKey: 'todos.groupOverdue', color: 'text-red-600 dark:text-red-400' },
+    { key: 'today', labelKey: 'todos.groupToday', color: 'text-orange-600' },
+    { key: 'soon', labelKey: 'todos.groupSoon', color: 'text-yellow-600 dark:text-yellow-400' },
+    { key: 'none', labelKey: 'todos.groupNone', color: 'text-gray-500 dark:text-gray-400' },
+    { key: 'later', labelKey: 'todos.groupLater', color: 'text-gray-500 dark:text-gray-400' },
   ];
   return meta
     .map(m => ({ ...m, items: sortByPriority(groups[m.key]) }))
@@ -59,6 +54,12 @@ function groupTodos(todos: any[]): { key: string; label: string; color: string; 
 }
 
 export default function Todos() {
+  const { t } = useTranslation();
+  const priorityLabels: Record<string, string> = {
+    high: t('todos.priorityHigh'),
+    medium: t('todos.priorityMedium'),
+    low: t('todos.priorityLow'),
+  };
   const [todos, setTodos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState('');
@@ -72,7 +73,7 @@ export default function Todos() {
       const result = await todosApi.list('pending');
       setTodos(result);
     } catch {
-      showToast('加载失败', 'error');
+      showToast(t('common.loadFail'), 'error');
     } finally {
       setLoading(false);
     }
@@ -93,36 +94,36 @@ export default function Todos() {
       setPriority('medium');
       setDueDate('');
       setTags('');
-      showToast('添加成功');
+      showToast(t('common.addSuccess'));
       load();
     } catch {
-      showToast('添加失败', 'error');
+      showToast(t('common.addFail'), 'error');
     }
   };
 
   const handleStart = async (id: number) => {
     try {
       await todosApi.update(id, { status: 'done' });
-      showToast('已转入正在做');
+      showToast(t('todos.started'));
       load();
     } catch {
-      showToast('操作失败', 'error');
+      showToast(t('common.operateFail'), 'error');
     }
   };
 
   const handleDelete = async (id: number) => {
     try {
       await todosApi.delete(id);
-      showToast('删除成功');
+      showToast(t('common.deleteSuccess'));
       load();
     } catch {
-      showToast('删除失败', 'error');
+      showToast(t('common.deleteFail'), 'error');
     }
   };
 
   return (
     <div className="p-6 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6 tracking-tight">未来计划</h1>
+      <h1 className="text-2xl font-bold mb-6 tracking-tight">{t('todos.title')}</h1>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-6 transition-base fade-in">
         <div className="flex flex-col gap-3">
@@ -131,7 +132,7 @@ export default function Todos() {
             value={content}
             onChange={e => setContent(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
-            placeholder="计划做什么？"
+            placeholder={t('todos.planWhat')}
             className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <div className="flex gap-3 items-center">
@@ -140,9 +141,9 @@ export default function Todos() {
               onChange={e => setPriority(e.target.value)}
               className="border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
-              <option value="high">高优先级</option>
-              <option value="medium">中优先级</option>
-              <option value="low">低优先级</option>
+              <option value="high">{t('todos.priorityHigh')}</option>
+              <option value="medium">{t('todos.priorityMedium')}</option>
+              <option value="low">{t('todos.priorityLow')}</option>
             </select>
             <DatePicker
               value={dueDate}
@@ -154,21 +155,21 @@ export default function Todos() {
             onClick={handleAdd}
             className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-base hover:bg-blue-700 self-start"
           >
-            添加
+            {t('common.add')}
           </button>
         </div>
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500"><div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 mr-2"></div>加载中...</div>
+        <div className="flex items-center justify-center py-8 text-gray-400 dark:text-gray-500"><div className="animate-spin rounded-full h-6 w-6 border-2 border-gray-300 dark:border-gray-600 border-t-blue-500 mr-2"></div>{t('common.loading')}</div>
       ) : todos.length === 0 ? (
-        <div className="fade-in"><EmptyState message="没有未来计划" onRetry={load} /></div>
+        <div className="fade-in"><EmptyState message={t('todos.noTodos')} onRetry={load} /></div>
       ) : (
         <div className="space-y-6">
           {groupTodos(todos).map(group => (
             <div key={group.key} className="slide-up">
               <h2 className={`text-base font-bold mb-2 tracking-wide ${group.color}`}>
-                {group.label}（{group.items.length}）
+                {t(group.labelKey)}（{group.items.length}）
               </h2>
               <div className="space-y-2">
                 {group.items.map(todo => (
@@ -177,10 +178,10 @@ export default function Todos() {
                       <div className="flex-1">
                         <p className="text-sm">{todo.content}</p>
                         <div className="flex gap-3 mt-1 text-xs text-gray-500 dark:text-gray-400">
-                          <span>优先级: {priorityLabels[todo.priority]}</span>
+                          <span>{t('todos.priority')}: {priorityLabels[todo.priority]}</span>
                           {todo.due_date && (
                             <span className={isOverdue(todo.due_date) ? 'text-red-500 dark:text-red-400' : ''}>
-                              截止: {todo.due_date}{isOverdue(todo.due_date) ? ' (已逾期)' : ''}
+                              {t('todos.dueDate')}: {todo.due_date}{isOverdue(todo.due_date) ? ` (${t('todos.overdue')})` : ''}
                             </span>
                           )}
                           {todo.tags && <span className="text-blue-500 dark:text-blue-400">{todo.tags}</span>}
@@ -191,7 +192,7 @@ export default function Todos() {
                           onClick={() => handleStart(todo.id)}
                           className="text-sm text-green-600 dark:text-green-400 hover:text-green-800"
                         >
-                          开始做
+                          {t('todos.start')}
                         </button>
                         <ConfirmButton onConfirm={() => handleDelete(todo.id)} />
                       </div>
