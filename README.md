@@ -1,6 +1,6 @@
 # Doer
 
-[English](./README.md) | [简体中文](./README.zh-CN.md) | [Español](./README.es.md)
+[English](./README.md) | [简体中文](./README.zh-CN.md)
 
 A locally-run web application to help you record and manage your work.
 
@@ -42,28 +42,29 @@ Frontend at http://localhost:5173, backend at http://localhost:3001, auto-opens 
 > - If `npm install` fails with `EPERM`, close all programs using `node_modules` (VS Code, terminals), delete the `node_modules` folder and retry
 > - Dev mode `npm run dev` works on Windows without extra configuration
 
-### Desktop Mode (Electron)
+### Desktop App (Electron)
+
+Download the latest installer from [GitHub Releases](https://github.com/AuthurZPJ/Doer/releases) — available for Windows, macOS, and Linux. No Node.js or build tools required.
+
+Package locally (current platform only):
 
 ```bash
-npm install
-npm run build
-npm run electron:rebuild   # rebuild native modules for Electron (first time only)
-npm run electron
+npm run dist
 ```
 
-Dev mode:
+For cross-platform builds, push a tag to trigger CI:
+
+```bash
+git tag v1.2.0
+git push origin v1.2.0
+```
+
+GitHub Actions will build and publish `.exe`, `.dmg`, and `.AppImage` to Releases automatically.
+
+Dev mode (Electron window with hot reload):
 
 ```bash
 npm run electron:dev
-```
-
-Note: `npm run electron:rebuild` rebuilds `better-sqlite3` for Electron's Node version. After running Electron, run `npm rebuild better-sqlite3` to switch back to regular Node for `npm run dev`.
-
-Package as installer:
-
-```bash
-npm run build
-npx electron-builder --config electron-builder.cjs
 ```
 
 ## CLI Usage

@@ -1,6 +1,6 @@
 # Doer
 
-[English](./README.md) | [简体中文](./README.zh-CN.md) | [Español](./README.es.md)
+[English](./README.md) | [简体中文](./README.zh-CN.md)
 
 一个本地运行的 Web 应用，帮助记录和管理工作内容。
 
@@ -42,28 +42,29 @@ npm run dev
 > - 如果 `npm install` 报 `EPERM` 权限错误，关闭所有使用 node_modules 的程序（如 VS Code、终端），删除 `node_modules` 文件夹后重试
 > - 开发模式 `npm run dev` 在 Windows 上可直接使用，无需额外配置
 
-### 桌面模式 (Electron)
+### 桌面应用 (Electron)
+
+从 [GitHub Releases](https://github.com/AuthurZPJ/Doer/releases) 下载最新安装包，支持 Windows、macOS、Linux，无需安装 Node.js 或编译工具。
+
+本地打包（仅当前平台）：
 
 ```bash
-npm install
-npm run build
-npm run electron:rebuild   # 为 Electron 重新编译原生模块（仅首次）
-npm run electron
+npm run dist
 ```
 
-开发模式：
+跨平台构建，推送 tag 触发 CI：
+
+```bash
+git tag v1.2.0
+git push origin v1.2.0
+```
+
+GitHub Actions 会自动构建并发布 `.exe`、`.dmg`、`.AppImage` 到 Releases。
+
+开发模式（Electron 窗口 + 热重载）：
 
 ```bash
 npm run electron:dev
-```
-
-注意：`npm run electron:rebuild` 会为 Electron 的 Node 版本重新编译 `better-sqlite3`。运行 Electron 后，需要执行 `npm rebuild better-sqlite3` 切回普通 Node 以使用 `npm run dev`。
-
-打包为安装包：
-
-```bash
-npm run build
-npx electron-builder --config electron-builder.cjs
 ```
 
 ## CLI 使用

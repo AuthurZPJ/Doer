@@ -15,7 +15,7 @@ function startServer() {
 
   serverProcess = fork(entryFile, [], {
     cwd: serverDir,
-    env: { ...process.env, NODE_ENV: 'production', ELECTRON_RUN_AS_NODE: '1' },
+    env: { ...process.env, NODE_ENV: 'production', ELECTRON_RUN_AS_NODE: '1', DOER_DB_DIR: app.getPath('userData') },
     execPath: process.execPath,
     stdio: ['pipe', 'pipe', 'pipe', 'ipc'],
   });
