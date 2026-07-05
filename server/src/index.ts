@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { initDb, getDb } from './db/index.js';
+import { initDb, closeDb } from './db/index.js';
 import tasksRouter from './routes/tasks.js';
 import todosRouter from './routes/todos.js';
 import meetingsRouter from './routes/meetings.js';
@@ -12,10 +12,13 @@ import backupRouter from './routes/backup.js';
 import subtasksRouter from './routes/subtasks.js';
 import searchRouter from './routes/search.js';
 
-const app = express();
+export const app = express();
 const PORT = 3001;
 
-app.use(cors());
+app.use(cors({ origin: (origin, cb) => {
+  if (!origin || /^http:\/\/localhost:\d+$/.test(origin)) cb(null, true);
+  else cb(new Error('CORS not allowed'));
+} }));
 app.use(express.json());
 
 initDb();
@@ -38,19 +41,21 @@ app.use('/api/search', searchRouter);
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);
-  res.status(500).json({ error: err.message });
+  res.status(500).json({ error: 'internal server error' });
 });
 
-const server = app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
+if (!process.env.VITEST) {
+  const server = app.listen(PORT, '127.0.0.1', () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
 
-function shutdown() {
-  try { getDb().close(); } catch {}
-  server.close();
-  process.exit(0);
+  function shutdown() {
+    closeDb();
+    server.close();
+    process.exit(0);
+  }
+
+  process.on('SIGTERM', shutdown);
+  process.on('SIGINT', shutdown);
+  process.on('beforeExit', () => { closeDb(); });
 }
-
-process.on('SIGTERM', shutdown);
-process.on('SIGINT', shutdown);
-process.on('beforeExit', () => { try { getDb().close(); } catch {} });

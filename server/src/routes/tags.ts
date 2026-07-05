@@ -39,7 +39,8 @@ router.put('/:id', (req, res) => {
 });
 
 router.delete('/:id', (req, res) => {
-  getDb().prepare('DELETE FROM tags WHERE id = ?').run(req.params.id);
+  const info = getDb().prepare('DELETE FROM tags WHERE id = ?').run(req.params.id);
+  if (info.changes === 0) return res.status(404).json({ error: 'tag not found' });
   res.json({ ok: true });
 });
 

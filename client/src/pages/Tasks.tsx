@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { tasksApi, subtasksApi } from '../api';
 import { showToast } from '../components/Toast';
@@ -7,9 +7,10 @@ import TagInput from '../components/TagInput';
 import ConfirmButton from '../components/ConfirmButton';
 import DatePicker from '../components/DatePicker';
 import { todayStr } from '../utils/date';
+import type { Task, Subtask } from '../types';
 
-function formatTime(iso: string): string {
-  return new Date(iso).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+function formatTime(iso: string, locale: string): string {
+  return new Date(iso).toLocaleString(locale, { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
 }
 
 interface SubtaskNode {
@@ -23,11 +24,11 @@ interface SubtaskNode {
   children: SubtaskNode[];
 }
 
-function buildSubtree(flat: any[], parentId: number | null): SubtaskNode[] {
+function buildSubtree(flat: Subtask[], parentId: number | null): SubtaskNode[] {
   return flat
     .filter(s => (s.parent_subtask_id ?? null) === parentId)
     .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-    .map((s: any): SubtaskNode => ({
+    .map((s): SubtaskNode => ({
       id: s.id,
       content: s.content,
       status: s.status,
@@ -93,10 +94,11 @@ function AddChildInput({ taskId, parentKey, parentSubtaskId, value, onChange, on
 }
 
 export default function Tasks() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const locale = i18n.language;
   const [date, setDate] = useState(todayStr());
-  const [inProgress, setInProgress] = useState<any[]>([]);
-  const [completed, setCompleted] = useState<any[]>([]);
+  const [inProgress, setInProgress] = useState<Task[]>([]);
+  const [completed, setCompleted] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState('');
   const [tags, setTags] = useState('');
@@ -108,30 +110,35 @@ export default function Tasks() {
   const [subEditText, setSubEditText] = useState('');
 
   const [subInputs, setSubInputs] = useState<Record<string, string>>({});
-  const [subtaskMap, setSubtaskMap] = useState<Record<number, any[]>>({});
+  const [subtaskMap, setSubtaskMap] = useState<Record<number, Subtask[]>>({});
+  const reqIdRef = useRef(0);
 
   const load = useCallback(async () => {
+    const reqId = ++reqIdRef.current;
     setLoading(true);
     try {
       const [inProgressTasks, completedTasks] = await Promise.all([
         tasksApi.list({ status: 'in_progress' }),
         tasksApi.list({ date }),
       ]);
+      if (reqId !== reqIdRef.current) return;
       setInProgress(inProgressTasks);
       setCompleted(completedTasks);
 
       const subtaskEntries = await Promise.all(
-        [...inProgressTasks, ...completedTasks].map((t: any) => subtasksApi.list(t.id))
+        [...inProgressTasks, ...completedTasks].map((task) => subtasksApi.list(task.id))
       );
-      const map: Record<number, any[]> = {};
-      [...inProgressTasks, ...completedTasks].forEach((t: any, i: number) => {
-        map[t.id] = subtaskEntries[i];
+      if (reqId !== reqIdRef.current) return;
+      const map: Record<number, Subtask[]> = {};
+      [...inProgressTasks, ...completedTasks].forEach((task, i) => {
+        map[task.id] = subtaskEntries[i];
       });
       setSubtaskMap(map);
     } catch {
+      if (reqId !== reqIdRef.current) return;
       showToast(t('common.loadFail'), 'error');
     } finally {
-      setLoading(false);
+      if (reqId === reqIdRef.current) setLoading(false);
     }
   }, [date]);
 
@@ -185,7 +192,7 @@ export default function Tasks() {
     }
   };
 
-  const startEditTask = (task: any) => {
+  const startEditTask = (task: Task) => {
     setEditingTaskId(task.id);
     setTaskEditText(task.content);
   };
@@ -287,6 +294,9 @@ export default function Tasks() {
             ) : (
               <span
                 onClick={() => startEditSub(taskId, node.id, node.content)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEditSub(taskId, node.id, node.content); } }}
+                tabIndex={0}
+                role="button"
                 className={`text-sm cursor-pointer hover:underline truncate ${node.status === 'done' ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-700 dark:text-gray-300'}`}
               >
                 {node.content}
@@ -294,8 +304,8 @@ export default function Tasks() {
             )}
             <span className="text-xs text-gray-400 dark:text-gray-500 shrink-0">
               {node.status === 'done' && node.done_at
-                ? `✓ ${formatTime(node.done_at)}`
-                : formatTime(node.created_at)}
+                ? `✓ ${formatTime(node.done_at, locale)}`
+                : formatTime(node.created_at, locale)}
             </span>
           </div>
           <button
@@ -322,10 +332,10 @@ export default function Tasks() {
     );
   };
 
-  const renderInProgressTask = (task: any) => {
+  const renderInProgressTask = (task: Task) => {
     const flat = subtaskMap[task.id] || [];
     const tree = buildSubtree(flat, null);
-    const doneCount = flat.filter((s: any) => s.status === 'done').length;
+    const doneCount = flat.filter((s) => s.status === 'done').length;
 
     return (
       <div>
@@ -347,6 +357,9 @@ export default function Tasks() {
             ) : (
               <p
                 onClick={() => startEditTask(task)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEditTask(task); } }}
+                tabIndex={0}
+                role="button"
                 className="text-sm cursor-pointer hover:underline"
               >
                 {task.content}
@@ -354,7 +367,7 @@ export default function Tasks() {
             )}
             <div className="flex gap-2 mt-0.5 text-xs text-gray-400 dark:text-gray-500">
               {task.tags && <span className="text-blue-500 dark:text-blue-400">{task.tags}</span>}
-              <span>{formatTime(task.created_at)}</span>
+              <span>{formatTime(task.created_at, locale)}</span>
               {task.due_date && (
                 <span className={task.due_date < todayStr() ? 'text-red-500 dark:text-red-400' : 'text-yellow-600 dark:text-yellow-400'}>
                   {t('tasks.dueDate')}: {task.due_date}{task.due_date < todayStr() ? ` (${t('tasks.overdue')})` : ''}
@@ -400,7 +413,7 @@ export default function Tasks() {
           {node.content}
         </span>
         <span className="text-xs text-gray-400 dark:text-gray-500">
-          {node.status === 'done' && node.done_at ? `✓ ${formatTime(node.done_at)}` : t('tasks.notCompleted')}
+          {node.status === 'done' && node.done_at ? `✓ ${formatTime(node.done_at, locale)}` : t('tasks.notCompleted')}
         </span>
       </div>
       {node.children.length > 0 && (
@@ -411,7 +424,7 @@ export default function Tasks() {
     </div>
   );
 
-  const renderCompletedTask = (task: any) => {
+  const renderCompletedTask = (task: Task) => {
     const flat = subtaskMap[task.id] || [];
     const tree = buildSubtree(flat, null);
     return (
@@ -434,6 +447,9 @@ export default function Tasks() {
             ) : (
               <p
                 onClick={() => startEditTask(task)}
+                onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEditTask(task); } }}
+                tabIndex={0}
+                role="button"
                 className="text-sm cursor-pointer hover:underline"
               >
                 {task.content}
@@ -444,7 +460,7 @@ export default function Tasks() {
               <span>{task.completed_at ? new Date(task.completed_at).toLocaleDateString() : new Date(task.created_at).toLocaleDateString()}</span>
               {task.due_date && <span>{t('tasks.dueDate')}: {task.due_date}</span>}
               {flat.length > 0 && (
-                <span className="text-gray-500 dark:text-gray-400">{flat.filter((s: any) => s.status === 'done').length}/{flat.length} {t('tasks.subtaskCount')}</span>
+                <span className="text-gray-500 dark:text-gray-400">{flat.filter((s) => s.status === 'done').length}/{flat.length} {t('tasks.subtaskCount')}</span>
               )}
             </div>
           </div>
@@ -474,6 +490,7 @@ export default function Tasks() {
             onChange={e => setContent(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
             placeholder={t('tasks.startWhat')}
+            aria-label={t('tasks.startWhat')}
             className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <div>

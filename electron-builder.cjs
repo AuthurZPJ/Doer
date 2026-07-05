@@ -13,8 +13,10 @@ const config = {
     'electron/**/*',
     'client/dist/**/*',
     'server/dist/**/*',
+    'server/src/db/schema.sql',
     'server/package.json',
     'package.json',
+    'node_modules/**/*',
   ],
   asarUnpack: [
     '**/*.node',

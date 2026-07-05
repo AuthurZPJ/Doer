@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getDb, saveTags } from '../db/index.js';
+import { isValidPriority, isValidTodoStatus, isValidDate } from '../utils/validate.js';
 
 const router = Router();
 
@@ -16,6 +17,8 @@ router.get('/', (req, res) => {
 router.post('/', (req, res) => {
   const { content, priority = 'medium', due_date = null, tags = '' } = req.body;
   if (!content) return res.status(400).json({ error: 'content is required' });
+  if (!isValidPriority(priority)) return res.status(400).json({ error: 'invalid priority' });
+  if (!isValidDate(due_date)) return res.status(400).json({ error: 'invalid due_date' });
   const now = new Date().toISOString();
   const info = getDb().prepare(
     'INSERT INTO todos (content, priority, due_date, tags, status, created_at) VALUES (?, ?, ?, ?, ?, ?)'
@@ -35,10 +38,17 @@ router.put('/:id', (req, res) => {
 
   const updates: Record<string, any> = {};
   if (content !== undefined) updates.content = content;
-  if (priority !== undefined) updates.priority = priority;
-  if (due_date !== undefined) updates.due_date = due_date;
+  if (priority !== undefined) {
+    if (!isValidPriority(priority)) return res.status(400).json({ error: 'invalid priority' });
+    updates.priority = priority;
+  }
+  if (due_date !== undefined) {
+    if (!isValidDate(due_date)) return res.status(400).json({ error: 'invalid due_date' });
+    updates.due_date = due_date;
+  }
   if (tags !== undefined) updates.tags = tags;
   if (status !== undefined) {
+    if (!isValidTodoStatus(status)) return res.status(400).json({ error: 'invalid status' });
     updates.status = status;
     updates.done_at = status === 'done' ? now : null;
   }
@@ -64,7 +74,8 @@ router.put('/:id', (req, res) => {
 });
 
 router.delete('/:id', (req, res) => {
-  getDb().prepare('DELETE FROM todos WHERE id = ?').run(req.params.id);
+  const info = getDb().prepare('DELETE FROM todos WHERE id = ?').run(req.params.id);
+  if (info.changes === 0) return res.status(404).json({ error: 'todo not found' });
   res.json({ ok: true });
 });
 

@@ -7,10 +7,11 @@ import TagInput from '../components/TagInput';
 import ConfirmButton from '../components/ConfirmButton';
 import DatePicker from '../components/DatePicker';
 import { todayStr } from '../utils/date';
+import type { Meeting } from '../types';
 
 export default function Meetings() {
   const { t } = useTranslation();
-  const [meetings, setMeetings] = useState<any[]>([]);
+  const [meetings, setMeetings] = useState<Meeting[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);
@@ -29,7 +30,7 @@ export default function Meetings() {
     try {
       const result = await meetingsApi.list();
       setMeetings(result);
-      setSelectedId(prev => (prev !== null && result.some((m: any) => m.id === prev)) ? prev : (result.length > 0 ? result[0].id : null));
+      setSelectedId(prev => (prev !== null && result.some((m) => m.id === prev)) ? prev : (result.length > 0 ? result[0].id : null));
     } catch {
       showToast(t('common.loadFail'), 'error');
     } finally {
@@ -82,7 +83,7 @@ export default function Meetings() {
   };
 
   const handleSaveEdit = async () => {
-    if (!editingId || !editTitle.trim()) return;
+    if (editingId == null || !editTitle.trim()) return;
     try {
       await meetingsApi.update(editingId, {
         title: editTitle.trim(),
@@ -118,12 +119,14 @@ export default function Meetings() {
               value={title}
               onChange={e => setTitle(e.target.value)}
               placeholder={t('meetings.meetingTitle')}
+              aria-label={t('meetings.meetingTitle')}
               className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             <textarea
               value={content}
               onChange={e => setContent(e.target.value)}
               placeholder={t('meetings.meetingContent')}
+              aria-label={t('meetings.meetingContent')}
               rows={6}
               className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />

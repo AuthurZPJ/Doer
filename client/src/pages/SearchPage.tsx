@@ -1,14 +1,8 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { searchApi } from '../api';
 import { showToast } from '../components/Toast';
-
-interface SearchResults {
-  tasks: any[];
-  todos: any[];
-  meetings: any[];
-  learnings: any[];
-}
+import type { SearchResults } from '../types';
 
 const EMPTY: SearchResults = { tasks: [], todos: [], meetings: [], learnings: [] };
 
@@ -18,19 +12,23 @@ export default function SearchPage() {
   const [results, setResults] = useState<SearchResults>(EMPTY);
   const [searched, setSearched] = useState(false);
   const [loading, setLoading] = useState(false);
+  const reqIdRef = useRef(0);
 
   const doSearch = useCallback(async (q: string) => {
     const trimmed = q.trim();
     if (!trimmed) return;
+    const reqId = ++reqIdRef.current;
     setLoading(true);
     try {
       const data = await searchApi.search(trimmed);
+      if (reqId !== reqIdRef.current) return;
       setResults(data);
       setSearched(true);
     } catch {
+      if (reqId !== reqIdRef.current) return;
       showToast(t('common.loadFail'), 'error');
     } finally {
-      setLoading(false);
+      if (reqId === reqIdRef.current) setLoading(false);
     }
   }, []);
 
@@ -41,8 +39,8 @@ export default function SearchPage() {
   const hasResults =
     results.tasks.length + results.todos.length + results.meetings.length + results.learnings.length > 0;
 
-  const dateOf = (row: any, field: string) =>
-    row[field] ? new Date(row[field]).toLocaleDateString() : '';
+  const dateOf = (value: string | null | undefined) =>
+    value ? new Date(value).toLocaleDateString() : '';
 
   return (
     <div className="p-6 max-w-3xl">
@@ -55,6 +53,7 @@ export default function SearchPage() {
           onChange={e => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={t('search.placeholder')}
+          aria-label={t('search.placeholder')}
           className="flex-1 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-base"
         />
         <button
@@ -75,29 +74,29 @@ export default function SearchPage() {
       {hasResults && (
         <div className="space-y-6 slide-up">
           <Section title={t('search.sectionDoing')} count={results.tasks.length}>
-            {results.tasks.map((t: any) => (
+            {results.tasks.map((task) => (
               <ResultCard
-                key={t.id}
-                preview={t.content}
-                date={dateOf(t, t.completed_at ? 'completed_at' : 'created_at')}
-                tags={t.tags}
+                key={task.id}
+                preview={task.content}
+                date={dateOf(task.completed_at || task.created_at)}
+                tags={task.tags}
               />
             ))}
           </Section>
 
           <Section title={t('search.sectionTodos')} count={results.todos.length}>
-            {results.todos.map((t: any) => (
+            {results.todos.map((todo) => (
               <ResultCard
-                key={t.id}
-                preview={t.content}
-                date={dateOf(t, 'created_at')}
-                tags={t.tags}
+                key={todo.id}
+                preview={todo.content}
+                date={dateOf(todo.created_at)}
+                tags={todo.tags}
               />
             ))}
           </Section>
 
           <Section title={t('search.sectionMeetings')} count={results.meetings.length}>
-            {results.meetings.map((m: any) => (
+            {results.meetings.map((m) => (
               <ResultCard
                 key={m.id}
                 preview={m.title}
@@ -108,11 +107,11 @@ export default function SearchPage() {
           </Section>
 
           <Section title={t('search.sectionKnowledge')} count={results.learnings.length}>
-            {results.learnings.map((l: any) => (
+            {results.learnings.map((l) => (
               <ResultCard
                 key={l.id}
                 preview={l.title}
-                date={dateOf(l, 'created_at')}
+                date={dateOf(l.created_at)}
                 tags={l.tags}
               />
             ))}

@@ -50,30 +50,76 @@ function buildSubtaskTree(subtasks: any[]): SubtaskNode[] {
   return roots;
 }
 
+function placeholders(n: number): string {
+  return new Array(n).fill('?').join(',');
+}
+
 router.get('/', (req, res) => {
   const weekStartParam = (req.query.week_start as string) || getWeekStart(todayStr());
   const weekStart = getWeekStart(weekStartParam);
   const weekEnd = addDays(weekStart, 6);
 
   const db = getDb();
+  const weekDates: string[] = [];
+  for (let i = 0; i < 7; i++) weekDates.push(addDays(weekStart, i));
+
+  const completedTasksByDate = new Map<string, any[]>();
+  const allCompletedTaskIds: number[] = [];
+  for (const date of weekDates) {
+    const tasks = db.prepare(
+      "SELECT * FROM tasks WHERE status = 'completed' AND completed_at = ? ORDER BY created_at ASC"
+    ).all(date) as any[];
+    completedTasksByDate.set(date, tasks);
+    for (const t of tasks) allCompletedTaskIds.push(t.id);
+  }
+
+  const subtaskMap = new Map<number, any[]>();
+  if (allCompletedTaskIds.length > 0) {
+    const ph = placeholders(allCompletedTaskIds.length);
+    const allSubs = db.prepare(
+      `SELECT * FROM subtasks WHERE task_id IN (${ph}) ORDER BY created_at ASC`
+    ).all(...allCompletedTaskIds) as any[];
+    for (const s of allSubs) {
+      if (!subtaskMap.has(s.task_id)) subtaskMap.set(s.task_id, []);
+      subtaskMap.get(s.task_id)!.push(s);
+    }
+  }
+
+  const standaloneByDate = new Map<string, any[]>();
+  const allStandaloneTaskIds = new Set<number>();
+  for (const date of weekDates) {
+    const rows = db.prepare(
+      `SELECT s.*, t.tags as parent_tags, t.content as parent_content
+       FROM subtasks s
+       JOIN tasks t ON s.task_id = t.id
+       WHERE s.status = 'done' AND date(s.done_at, 'localtime') = ? AND t.status != 'completed'
+       ORDER BY s.done_at ASC`
+    ).all(date) as any[];
+    standaloneByDate.set(date, rows);
+    for (const r of rows) allStandaloneTaskIds.add(r.task_id);
+  }
+
+  const parentCountMap = new Map<number, number>();
+  if (allStandaloneTaskIds.size > 0) {
+    const ids = Array.from(allStandaloneTaskIds);
+    const ph = placeholders(ids.length);
+    const counts = db.prepare(
+      `SELECT task_id, COUNT(*) as c FROM subtasks WHERE task_id IN (${ph}) GROUP BY task_id`
+    ).all(...ids) as any[];
+    for (const row of counts) parentCountMap.set(row.task_id, row.c);
+  }
+
   const days: any[] = [];
   const summaryItems: any[] = [];
   let totalDone = 0;
   let totalSubtasks = 0;
   const standaloneParentSeen = new Set<number>();
 
-  for (let i = 0; i < 7; i++) {
-    const date = addDays(weekStart, i);
-
-    const completedTasks = db.prepare(
-      "SELECT * FROM tasks WHERE status = 'completed' AND completed_at = ? ORDER BY created_at ASC"
-    ).all(date) as any[];
+  for (const date of weekDates) {
+    const completedTasks = completedTasksByDate.get(date) || [];
 
     const tasksWithSubs = completedTasks.map(task => {
-      const subtasks = db.prepare(
-        "SELECT * FROM subtasks WHERE task_id = ? ORDER BY created_at ASC"
-      ).all(task.id) as any[];
-
+      const subtasks = subtaskMap.get(task.id) || [];
       const doneCount = subtasks.filter(s => s.status === 'done').length;
       const tree = buildSubtaskTree(subtasks);
 
@@ -97,25 +143,15 @@ router.get('/', (req, res) => {
       };
     });
 
-    const standaloneRows = db.prepare(
-      `SELECT s.*, t.tags as parent_tags, t.content as parent_content
-       FROM subtasks s
-       JOIN tasks t ON s.task_id = t.id
-       WHERE s.status = 'done' AND date(s.done_at) = ? AND t.status != 'completed'
-       ORDER BY s.done_at ASC`
-    ).all(date) as any[];
-
+    const standaloneRows = standaloneByDate.get(date) || [];
     const groupMap = new Map<number, any>();
     for (const row of standaloneRows) {
       if (!groupMap.has(row.task_id)) {
-        const totalOfParent = db.prepare(
-          "SELECT COUNT(*) as c FROM subtasks WHERE task_id = ?"
-        ).get(row.task_id) as any;
         groupMap.set(row.task_id, {
           parent_task_id: row.task_id,
           parent_task_content: row.parent_content,
           parent_tags: row.parent_tags,
-          total_subtasks: totalOfParent.c,
+          total_subtasks: parentCountMap.get(row.task_id) || 0,
           rows: [],
         });
       }

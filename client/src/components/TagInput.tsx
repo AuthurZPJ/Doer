@@ -20,7 +20,7 @@ export default function TagInput({ value, onChange }: TagInputProps) {
   const ref = useRef<HTMLDivElement>(null);
 
   const fetchTags = () => {
-    tagsApi.list().then((data: any[]) => setTags(data.map(t => ({ name: t.name, color: t.color }))));
+    tagsApi.list().then((data) => setTags(data.map(t => ({ name: t.name, color: t.color })))).catch(() => {});
   };
 
   useEffect(() => { fetchTags(); }, []);

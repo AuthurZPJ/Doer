@@ -4,6 +4,7 @@ import { tagsApi } from '../api';
 import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
 import ConfirmButton from '../components/ConfirmButton';
+import type { Tag } from '../types';
 
 const presetColors = [
   '#3b82f6', '#ef4444', '#10b981', '#f59e0b',
@@ -12,7 +13,7 @@ const presetColors = [
 
 export default function TagsPage() {
   const { t } = useTranslation();
-  const [tags, setTags] = useState<any[]>([]);
+  const [tags, setTags] = useState<Tag[]>([]);
   const [loading, setLoading] = useState(true);
   const [newName, setNewName] = useState('');
   const [newColor, setNewColor] = useState(presetColors[0]);
@@ -47,14 +48,14 @@ export default function TagsPage() {
     }
   };
 
-  const handleEdit = (tag: any) => {
+  const handleEdit = (tag: Tag) => {
     setEditingId(tag.id);
     setEditName(tag.name);
     setEditColor(tag.color || presetColors[0]);
   };
 
   const handleSaveEdit = async () => {
-    if (!editingId || !editName.trim()) return;
+    if (editingId == null || !editName.trim()) return;
     try {
       await tagsApi.update(editingId, { name: editName.trim(), color: editColor });
       setEditingId(null);

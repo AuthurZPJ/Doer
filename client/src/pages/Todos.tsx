@@ -7,6 +7,7 @@ import TagInput from '../components/TagInput';
 import ConfirmButton from '../components/ConfirmButton';
 import DatePicker from '../components/DatePicker';
 import { todayStr } from '../utils/date';
+import type { Todo } from '../types';
 
 const priorityColors: Record<string, string> = {
   high: 'border-l-red-500 dark:border-l-red-500',
@@ -21,24 +22,24 @@ function isOverdue(dueDate: string | null): boolean {
 
 const priorityOrder: Record<string, number> = { high: 0, medium: 1, low: 2 };
 
-function sortByPriority(arr: any[]): any[] {
+function sortByPriority(arr: Todo[]): Todo[] {
   return [...arr].sort((a, b) => (priorityOrder[a.priority] ?? 2) - (priorityOrder[b.priority] ?? 2));
 }
 
-function groupTodos(todos: any[]): { key: string; labelKey: string; color: string; items: any[] }[] {
+function groupTodos(todos: Todo[]): { key: string; labelKey: string; color: string; items: Todo[] }[] {
   const today = todayStr();
-  const groups: Record<string, any[]> = { overdue: [], today: [], soon: [], none: [], later: [] };
-  for (const t of todos) {
-    if (!t.due_date) {
-      groups.none.push(t);
-    } else if (t.due_date < today) {
-      groups.overdue.push(t);
-    } else if (t.due_date === today) {
-      groups.today.push(t);
+  const groups: Record<string, Todo[]> = { overdue: [], today: [], soon: [], none: [], later: [] };
+  for (const todo of todos) {
+    if (!todo.due_date) {
+      groups.none.push(todo);
+    } else if (todo.due_date < today) {
+      groups.overdue.push(todo);
+    } else if (todo.due_date === today) {
+      groups.today.push(todo);
     } else {
-      const diff = Math.floor((Date.parse(t.due_date) - Date.parse(today)) / 86400000);
-      if (diff <= 7) groups.soon.push(t);
-      else groups.later.push(t);
+      const diff = Math.floor((Date.parse(todo.due_date) - Date.parse(today)) / 86400000);
+      if (diff <= 7) groups.soon.push(todo);
+      else groups.later.push(todo);
     }
   }
   const meta = [
@@ -60,7 +61,7 @@ export default function Todos() {
     medium: t('todos.priorityMedium'),
     low: t('todos.priorityLow'),
   };
-  const [todos, setTodos] = useState<any[]>([]);
+  const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
   const [content, setContent] = useState('');
   const [priority, setPriority] = useState('medium');
@@ -127,18 +128,20 @@ export default function Todos() {
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-6 transition-base fade-in">
         <div className="flex flex-col gap-3">
-          <input
+            <input
             type="text"
             value={content}
             onChange={e => setContent(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter') handleAdd(); }}
             placeholder={t('todos.planWhat')}
+            aria-label={t('todos.planWhat')}
             className="border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
           <div className="flex gap-3 items-center">
             <select
               value={priority}
               onChange={e => setPriority(e.target.value)}
+              aria-label={t('todos.priority')}
               className="border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 text-sm transition-base focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="high">{t('todos.priorityHigh')}</option>

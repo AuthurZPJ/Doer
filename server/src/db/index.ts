@@ -8,7 +8,7 @@ const DB_DIR = process.env.DOER_DB_DIR || join(__dirname, '../../data');
 const DB_PATH = join(DB_DIR, 'doer.db');
 const SCHEMA_PATH = join(__dirname, 'schema.sql');
 
-let db: Database.Database;
+let db: Database.Database | undefined;
 
 export function initDb(): Database.Database {
   mkdirSync(DB_DIR, { recursive: true });
@@ -21,6 +21,13 @@ export function initDb(): Database.Database {
   return db;
 }
 
+export function closeDb(): void {
+  if (db) {
+    try { db.close(); } catch {}
+    db = undefined;
+  }
+}
+
 function migrate(db: Database.Database): void {
   const taskCols = db.prepare("PRAGMA table_info(tasks)").all() as any[];
   if (taskCols.length === 0) return;
@@ -29,25 +36,29 @@ function migrate(db: Database.Database): void {
   const completedAtCol = taskCols.find(c => c.name === 'completed_at');
 
   if (!hasStatus || (completedAtCol && completedAtCol.notnull === 1)) {
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS tasks_new (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        content TEXT NOT NULL,
-        tags TEXT DEFAULT '',
-        status TEXT NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed')),
-        due_date TEXT,
-        completed_at TEXT,
-        created_at TEXT NOT NULL
-      );
-      INSERT INTO tasks_new (id, content, tags, status, completed_at, created_at)
-        SELECT id, content, tags,
-          CASE WHEN ${hasStatus ? 'status' : "'completed'"} IN ('in_progress', 'completed')
-            THEN ${hasStatus ? 'status' : "'completed'"} ELSE 'completed' END,
-          completed_at, created_at
-        FROM tasks;
-      DROP TABLE tasks;
-      ALTER TABLE tasks_new RENAME TO tasks;
-    `);
+    db.pragma('foreign_keys = OFF');
+    db.transaction(() => {
+      db.exec(`
+        CREATE TABLE IF NOT EXISTS tasks_new (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          content TEXT NOT NULL,
+          tags TEXT DEFAULT '',
+          status TEXT NOT NULL DEFAULT 'in_progress' CHECK (status IN ('in_progress', 'completed')),
+          due_date TEXT,
+          completed_at TEXT,
+          created_at TEXT NOT NULL
+        );
+        INSERT INTO tasks_new (id, content, tags, status, completed_at, created_at)
+          SELECT id, content, tags,
+            CASE WHEN ${hasStatus ? 'status' : "'completed'"} IN ('in_progress', 'completed')
+              THEN ${hasStatus ? 'status' : "'completed'"} ELSE 'completed' END,
+            completed_at, created_at
+          FROM tasks;
+        DROP TABLE tasks;
+        ALTER TABLE tasks_new RENAME TO tasks;
+      `);
+    })();
+    db.pragma('foreign_keys = ON');
   }
 
   const taskCols2 = db.prepare("PRAGMA table_info(tasks)").all() as any[];

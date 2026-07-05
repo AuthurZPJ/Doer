@@ -1,6 +1,6 @@
 import { Router } from 'express';
-import { getDb, getDbPath, initDb } from '../db/index.js';
-import { copyFileSync, mkdirSync, readdirSync, existsSync, unlinkSync } from 'fs';
+import { getDb, getDbPath, initDb, closeDb } from '../db/index.js';
+import { copyFileSync, mkdirSync, readdirSync, existsSync, unlinkSync, renameSync } from 'fs';
 import { dirname, join, basename } from 'path';
 
 const router = Router();
@@ -10,7 +10,7 @@ function getBackupDir(): string {
 }
 
 function isSafeFilename(filename: string): boolean {
-  return filename === basename(filename) && !filename.includes('..') && !filename.includes('/');
+  return filename === basename(filename) && !filename.includes('..') && !filename.includes('/') && !filename.includes('\\') && filename.endsWith('.db');
 }
 
 router.post('/', (_req, res) => {
@@ -46,13 +46,24 @@ router.post('/restore', (req, res) => {
   if (!existsSync(backupPath)) return res.status(404).json({ error: 'backup file not found' });
 
   try {
-    const db = getDb();
-    db.close();
-    copyFileSync(backupPath, dbPath);
+    closeDb();
+    const preRestorePath = dbPath + '.pre-restore';
+    copyFileSync(dbPath, preRestorePath);
+    const tmpPath = dbPath + '.tmp';
+    copyFileSync(backupPath, tmpPath);
+    renameSync(tmpPath, dbPath);
+    unlinkSync(preRestorePath);
     initDb();
     res.json({ ok: true });
-  } catch {
-    try { initDb(); } catch {}
+  } catch (err) {
+    console.error('Restore failed:', err);
+    try {
+      const preRestorePath = dbPath + '.pre-restore';
+      if (existsSync(preRestorePath)) {
+        renameSync(preRestorePath, dbPath);
+      }
+      initDb();
+    } catch {}
     res.status(500).json({ error: 'restore failed' });
   }
 });

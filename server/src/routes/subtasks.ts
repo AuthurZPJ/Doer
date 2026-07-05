@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { getDb } from '../db/index.js';
+import { isValidSubtaskStatus } from '../utils/validate.js';
 
 const router = Router({ mergeParams: true });
 
@@ -36,6 +37,7 @@ router.put('/:id', (req: Request, res: Response) => {
   const updates: Record<string, any> = {};
   if (content !== undefined) updates.content = content;
   if (status !== undefined) {
+    if (!isValidSubtaskStatus(status)) return res.status(400).json({ error: 'invalid status' });
     updates.status = status;
     updates.done_at = status === 'done' ? new Date().toISOString() : null;
   }
@@ -54,7 +56,8 @@ router.put('/:id', (req: Request, res: Response) => {
 
 router.delete('/:id', (req: Request, res: Response) => {
   const taskId = req.params.taskId as string;
-  getDb().prepare('DELETE FROM subtasks WHERE id = ? AND task_id = ?').run(req.params.id, taskId);
+  const info = getDb().prepare('DELETE FROM subtasks WHERE id = ? AND task_id = ?').run(req.params.id, taskId);
+  if (info.changes === 0) return res.status(404).json({ error: 'subtask not found' });
   res.json({ ok: true });
 });
 

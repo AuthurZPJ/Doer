@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import { getDb, saveTags } from '../db/index.js';
 import { todayStr } from '../utils/date.js';
+import { isValidStatus, isValidDate } from '../utils/validate.js';
 
 const router = Router();
 
@@ -29,6 +30,8 @@ router.get('/', (req, res) => {
 router.post('/', (req, res) => {
   const { content, tags = '', status = 'in_progress', due_date = null } = req.body;
   if (!content) return res.status(400).json({ error: 'content is required' });
+  if (!isValidStatus(status)) return res.status(400).json({ error: 'invalid status' });
+  if (!isValidDate(due_date)) return res.status(400).json({ error: 'invalid due_date' });
   const now = new Date().toISOString();
   const completedAt = status === 'completed' ? todayStr() : null;
   const info = getDb().prepare(
@@ -47,8 +50,12 @@ router.put('/:id', (req, res) => {
   const updates: Record<string, any> = {};
   if (content !== undefined) updates.content = content;
   if (tags !== undefined) updates.tags = tags;
-  if (due_date !== undefined) updates.due_date = due_date;
+  if (due_date !== undefined) {
+    if (!isValidDate(due_date)) return res.status(400).json({ error: 'invalid due_date' });
+    updates.due_date = due_date;
+  }
   if (status !== undefined) {
+    if (!isValidStatus(status)) return res.status(400).json({ error: 'invalid status' });
     updates.status = status;
     updates.completed_at = status === 'completed' ? todayStr() : null;
   }
@@ -65,7 +72,8 @@ router.put('/:id', (req, res) => {
 });
 
 router.delete('/:id', (req, res) => {
-  getDb().prepare('DELETE FROM tasks WHERE id = ?').run(req.params.id);
+  const info = getDb().prepare('DELETE FROM tasks WHERE id = ?').run(req.params.id);
+  if (info.changes === 0) return res.status(404).json({ error: 'task not found' });
   res.json({ ok: true });
 });
 

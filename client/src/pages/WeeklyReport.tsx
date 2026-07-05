@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { weeklyReportApi } from '../api';
 import { showToast } from '../components/Toast';
@@ -6,6 +6,7 @@ import EmptyState from '../components/EmptyState';
 import DatePicker from '../components/DatePicker';
 import i18n from '../i18n';
 import { todayStr, toDateStr, parseLocalDate } from '../utils/date';
+import type { WeeklyReport as WeeklyReportData, WeeklyReportDay } from '../types';
 
 function getWeekStart(date: string): string {
   const d = parseLocalDate(date);
@@ -86,9 +87,9 @@ function TagBadge({ tags }: { tags: string }) {
   );
 }
 
-function reportToMarkdown(r: any, start: string, end: string): string {
+function reportToMarkdown(r: WeeklyReportData, start: string, end: string): string {
   const weekdayNames = getWeekdayNames();
-  const hasDayContent = (day: any) => day.tasks.length > 0 || (day.standalone_groups?.length || 0) > 0;
+  const hasDayContent = (day: WeeklyReportDay) => day.tasks.length > 0 || (day.standalone_groups?.length || 0) > 0;
   let md = `# ${i18n.t('weeklyReport.reportTitle')} ${start} ~ ${end}\n\n`;
   if (r.subtask_stats) {
     md += `> ${i18n.t('weeklyReport.subtaskStats')}: ${r.subtask_stats.total_done}/${r.subtask_stats.total_subtasks} ${i18n.t('weeklyReport.completedLabel')}\n\n`;
@@ -113,7 +114,7 @@ function reportToMarkdown(r: any, start: string, end: string): string {
   md += `## ${i18n.t('weeklyReport.summaryByTag')}\n\n`;
   for (const [tag, items] of Object.entries(r.summary_by_tag)) {
     md += `### ${tag}\n`;
-    for (const item of items as any[]) {
+    for (const item of items) {
       const countStr = item.total_subtasks > 0 ? ` (${item.done_subtasks}/${item.total_subtasks})` : '';
       const label = item.is_in_progress_parent ? ` (${i18n.t('weeklyReport.standaloneGroup')})` : '';
       md += `- ${item.content}${countStr}${label}\n`;
@@ -128,22 +129,26 @@ export default function WeeklyReport() {
   const { t } = useTranslation();
   const weekdayNames = [t('weekday.mon'), t('weekday.tue'), t('weekday.wed'), t('weekday.thu'), t('weekday.fri'), t('weekday.sat'), t('weekday.sun')];
   const [weekStart, setWeekStart] = useState(getWeekStart(todayStr()));
-  const [report, setReport] = useState<any>(null);
+  const [report, setReport] = useState<WeeklyReportData | null>(null);
   const [loading, setLoading] = useState(true);
   const [showExport, setShowExport] = useState(false);
   const [exportFrom, setExportFrom] = useState(getWeekStart(todayStr()));
   const [exportTo, setExportTo] = useState(getWeekStart(todayStr()));
   const [exporting, setExporting] = useState(false);
+  const reqIdRef = useRef(0);
 
   const load = useCallback(async () => {
+    const reqId = ++reqIdRef.current;
     setLoading(true);
     try {
       const result = await weeklyReportApi.get(weekStart);
+      if (reqId !== reqIdRef.current) return;
       setReport(result);
     } catch {
+      if (reqId !== reqIdRef.current) return;
       showToast(t('common.loadFail'), 'error');
     } finally {
-      setLoading(false);
+      if (reqId === reqIdRef.current) setLoading(false);
     }
   }, [weekStart]);
 
@@ -157,9 +162,9 @@ export default function WeeklyReport() {
   };
 
   const weekEnd = addDays(weekStart, 6);
-  const hasDayContent = (day: any) => day.tasks.length > 0 || (day.standalone_groups?.length || 0) > 0;
+  const hasDayContent = (day: WeeklyReportDay) => day.tasks.length > 0 || (day.standalone_groups?.length || 0) > 0;
   const allDays = report?.days || [];
-  const totalTasks = allDays.reduce((sum: number, d: any) => sum + d.tasks.length + (d.standalone_groups?.length || 0), 0) || 0;
+  const totalTasks = allDays.reduce((sum, d) => sum + d.tasks.length + (d.standalone_groups?.length || 0), 0) || 0;
 
   const handleExport = () => {
     if (!report) return;
@@ -175,7 +180,7 @@ export default function WeeklyReport() {
       let current = from;
       while (current <= to) {
         const r = await weeklyReportApi.get(current);
-        if (r.days.some((d: any) => hasDayContent(d))) {
+        if (r.days.some((d) => hasDayContent(d))) {
           allMd += reportToMarkdown(r, current, addDays(current, 6)) + '\n---\n\n';
         }
         current = addDays(current, 7);
@@ -285,7 +290,7 @@ export default function WeeklyReport() {
 
           <h2 className="text-sm font-semibold text-gray-600 dark:text-gray-400 tracking-wide mb-2">{t('weeklyReport.dailyComplete')}</h2>
           <div className="space-y-3 mb-6 slide-up">
-            {allDays.map((day: any) => {
+            {allDays.map((day) => {
               const weekday = weekdayNames[parseLocalDate(day.date).getDay() === 0 ? 6 : parseLocalDate(day.date).getDay() - 1];
               const dayCount = day.tasks.length + (day.standalone_groups?.length || 0);
               return (
@@ -296,7 +301,7 @@ export default function WeeklyReport() {
                     <span className="text-xs text-gray-400 dark:text-gray-500 font-normal">{dayCount} {t('weeklyReport.itemsWork')}</span>
                   </p>
                   <div className="space-y-2">
-                    {day.tasks.map((task: any) => (
+                    {day.tasks.map((task) => (
                       <div key={task.id} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-3 border-l-4 border-green-400 transition-base">
                         <div className="flex items-start gap-2 flex-wrap">
                           <span className="font-medium dark:text-gray-100">{task.content}</span>
@@ -312,7 +317,7 @@ export default function WeeklyReport() {
                         )}
                       </div>
                     ))}
-                    {(day.standalone_groups || []).map((g: any) => (
+                    {(day.standalone_groups || []).map((g) => (
                       <div key={`grp-${g.parent_task_id}`} className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg p-3 border-l-4 border-yellow-400 transition-base">
                         <p className="text-xs font-medium text-yellow-600 dark:text-yellow-400 mb-1">{t('weeklyReport.standaloneGroup')}</p>
                         <div className="flex items-start gap-2 flex-wrap">
@@ -341,10 +346,10 @@ export default function WeeklyReport() {
               <div key={tag}>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="inline-block bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-sm font-medium px-2 py-0.5 rounded">{tag}</span>
-                  <span className="text-xs text-gray-400">{(items as any[]).length} {t('weeklyReport.itemsWork')}</span>
+                  <span className="text-xs text-gray-400">{items.length} {t('weeklyReport.itemsWork')}</span>
                 </div>
                 <div className="space-y-2 ml-1">
-                  {(items as any[]).map((item, i) => (
+                  {items.map((item, i) => (
                     <div key={i} className="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-2 border-l-4 border-blue-400 transition-base">
                       <div className="flex items-start gap-2 flex-wrap">
                         <span className="text-gray-700 dark:text-gray-200 font-medium text-sm">{item.content}</span>

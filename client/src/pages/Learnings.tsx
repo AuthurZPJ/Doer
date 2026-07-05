@@ -5,10 +5,11 @@ import { showToast } from '../components/Toast';
 import EmptyState from '../components/EmptyState';
 import TagInput from '../components/TagInput';
 import ConfirmButton from '../components/ConfirmButton';
+import type { Learning } from '../types';
 
 export default function Learnings() {
   const { t } = useTranslation();
-  const [learnings, setLearnings] = useState<any[]>([]);
+  const [learnings, setLearnings] = useState<Learning[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [showForm, setShowForm] = useState(false);

@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { getDb, saveTags } from '../db/index.js';
+import { isValidDate } from '../utils/validate.js';
 
 const router = Router();
 
@@ -22,6 +23,7 @@ router.post('/', (req, res) => {
   const { title, content = '', tags = '', meeting_date } = req.body;
   if (!title) return res.status(400).json({ error: 'title is required' });
   if (!meeting_date) return res.status(400).json({ error: 'meeting_date is required' });
+  if (!isValidDate(meeting_date)) return res.status(400).json({ error: 'invalid meeting_date' });
   const now = new Date().toISOString();
   const info = getDb().prepare(
     'INSERT INTO meetings (title, content, tags, meeting_date, created_at) VALUES (?, ?, ?, ?, ?)'
@@ -40,7 +42,10 @@ router.put('/:id', (req, res) => {
   if (title !== undefined) { fields.push('title = ?'); values.push(title); }
   if (content !== undefined) { fields.push('content = ?'); values.push(content); }
   if (tags !== undefined) { fields.push('tags = ?'); values.push(tags); }
-  if (meeting_date !== undefined) { fields.push('meeting_date = ?'); values.push(meeting_date); }
+  if (meeting_date !== undefined) {
+    if (!isValidDate(meeting_date)) return res.status(400).json({ error: 'invalid meeting_date' });
+    fields.push('meeting_date = ?'); values.push(meeting_date);
+  }
   if (fields.length === 0) return res.status(400).json({ error: 'no fields to update' });
   values.push(req.params.id);
   db.prepare(`UPDATE meetings SET ${fields.join(', ')} WHERE id = ?`).run(...values);
@@ -49,7 +54,8 @@ router.put('/:id', (req, res) => {
 });
 
 router.delete('/:id', (req, res) => {
-  getDb().prepare('DELETE FROM meetings WHERE id = ?').run(req.params.id);
+  const info = getDb().prepare('DELETE FROM meetings WHERE id = ?').run(req.params.id);
+  if (info.changes === 0) return res.status(404).json({ error: 'meeting not found' });
   res.json({ ok: true });
 });
 
