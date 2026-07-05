@@ -391,7 +391,7 @@ export default function WeeklyReport() {
   return (
     <div className="p-6 max-w-3xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">{t('weeklyReport.title')}</h1>
+        <h1 className="text-2xl font-bold tracking-tight dark:text-gray-100">{t('weeklyReport.title')}</h1>
         <div className="flex items-center gap-2">
           <button onClick={handlePrevWeek} className="px-3 py-1 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-700 transition-base">‹</button>
           <DatePicker value={weekStart} onChange={handleWeekPicker} />
@@ -410,7 +410,7 @@ export default function WeeklyReport() {
               onClick={handleExport}
               className="text-left px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300 transition-base"
             >
-              <div className="font-medium">{t('weeklyReport.exportCurrentWeek')} ({weekStart} ~ {weekEnd})</div>
+              <div className="font-medium dark:text-gray-100">{t('weeklyReport.exportCurrentWeek')} ({weekStart} ~ {weekEnd})</div>
               <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('weeklyReport.singleWeekHint')}</div>
             </button>
             <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg flex-wrap">

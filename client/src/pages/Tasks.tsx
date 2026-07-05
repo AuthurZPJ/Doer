@@ -487,7 +487,7 @@ export default function Tasks() {
           </div>
           <button
             onClick={() => handleDeleteSubtask(taskId, node.id)}
-            className="text-xs text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-base shrink-0 ml-2"
+            className="text-xs text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300 opacity-0 group-hover:opacity-100 transition-base shrink-0 ml-2"
           >
             {t('common.delete')}
           </button>
@@ -688,7 +688,7 @@ export default function Tasks() {
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEditTask(task); } }}
                 tabIndex={0}
                 role="button"
-                className="text-sm cursor-pointer hover:underline"
+                className="text-sm cursor-pointer hover:underline dark:text-gray-100"
               >
                 {task.content}
               </p>
@@ -798,7 +798,7 @@ export default function Tasks() {
                 onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); startEditTask(task); } }}
                 tabIndex={0}
                 role="button"
-                className="text-sm cursor-pointer hover:underline"
+                className="text-sm cursor-pointer hover:underline dark:text-gray-100"
               >
                 {task.content}
               </p>
@@ -836,7 +836,7 @@ export default function Tasks() {
 
   return (
     <div className="p-6 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6 tracking-tight">{t('tasks.title')}</h1>
+      <h1 className="text-2xl font-bold mb-6 tracking-tight dark:text-gray-100">{t('tasks.title')}</h1>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-6 transition-base fade-in">
         <div className="flex flex-col gap-3">

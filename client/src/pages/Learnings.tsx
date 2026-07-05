@@ -59,7 +59,7 @@ export default function Learnings() {
   return (
     <div className="p-6 max-w-3xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">{t('learnings.title')}</h1>
+        <h1 className="text-2xl font-bold tracking-tight dark:text-gray-100">{t('learnings.title')}</h1>
         <button
           onClick={() => setShowForm(!showForm)}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 transition-base"
@@ -109,7 +109,7 @@ export default function Learnings() {
                 className="block w-full text-left p-4"
               >
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{l.title}</span>
+                  <span className="text-sm font-medium dark:text-gray-100">{l.title}</span>
                   <div className="flex items-center gap-3">
                     {l.tags && <span className="text-xs text-blue-500 dark:text-blue-400">{l.tags}</span>}
                     <span className="text-xs text-gray-400 dark:text-gray-500">{new Date(l.created_at).toLocaleDateString()}</span>

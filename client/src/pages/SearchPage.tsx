@@ -44,7 +44,7 @@ export default function SearchPage() {
 
   return (
     <div className="p-6 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6 tracking-tight">{t('search.title')}</h1>
+      <h1 className="text-2xl font-bold mb-6 tracking-tight dark:text-gray-100">{t('search.title')}</h1>
 
       <div className="flex gap-2 mb-6">
         <input

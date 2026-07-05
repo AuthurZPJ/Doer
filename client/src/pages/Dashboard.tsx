@@ -78,7 +78,7 @@ export default function Dashboard() {
   return (
     <div className="p-6">
       <div className="flex items-center gap-4 mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">{t('dashboard.title')}</h1>
+        <h1 className="text-2xl font-bold tracking-tight dark:text-gray-100">{t('dashboard.title')}</h1>
         <DatePicker
           value={date}
           onChange={setDate}

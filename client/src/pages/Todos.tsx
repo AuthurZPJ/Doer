@@ -124,7 +124,7 @@ export default function Todos() {
 
   return (
     <div className="p-6 max-w-3xl">
-      <h1 className="text-2xl font-bold mb-6 tracking-tight">{t('todos.title')}</h1>
+      <h1 className="text-2xl font-bold mb-6 tracking-tight dark:text-gray-100">{t('todos.title')}</h1>
 
       <div className="bg-white dark:bg-gray-800 rounded-xl shadow p-4 mb-6 transition-base fade-in">
         <div className="flex flex-col gap-3">

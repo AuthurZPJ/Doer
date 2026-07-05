@@ -170,7 +170,7 @@ export default function Layout() {
                       >
                         {t('common.restore')}
                       </button>
-                      <ConfirmButton onConfirm={() => handleDeleteBackup(filename)} className="text-xs text-red-400 hover:text-red-600">
+                      <ConfirmButton onConfirm={() => handleDeleteBackup(filename)} className="text-xs text-red-500 dark:text-red-400 hover:text-red-600 dark:hover:text-red-300">
                         {t('common.delete')}
                       </ConfirmButton>
                     </div>
