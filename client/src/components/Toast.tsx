@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
-type ToastType = 'success' | 'error';
+type ToastType = 'success' | 'error' | 'warning';
 
 interface ToastMessage {
   id: number;
@@ -43,7 +43,7 @@ export function ToastContainer() {
         <div
           key={t.id}
           className={`px-4 py-2 rounded-lg shadow-lg text-white text-sm slide-up ${
-            t.type === 'success' ? 'bg-green-600' : 'bg-red-600'
+            t.type === 'success' ? 'bg-green-600' : t.type === 'warning' ? 'bg-yellow-600' : 'bg-red-600'
           }`}
         >
           {t.message}

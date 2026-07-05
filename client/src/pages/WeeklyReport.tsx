@@ -107,13 +107,12 @@ function TagBadge({ tags }: { tags: string }) {
 
 interface ExportSections {
   overview: boolean;
-  weekly: boolean;
   daily: boolean;
   summary: boolean;
   weekTasks?: boolean;
 }
 
-function reportToMarkdown(r: WeeklyReportData, start: string, end: string, sections: ExportSections = { overview: true, weekly: false, daily: true, summary: true }, skipPreamble = false): string {
+function reportToMarkdown(r: WeeklyReportData, start: string, end: string, sections: ExportSections = { overview: true, daily: true, summary: true }, skipPreamble = false): string {
   const weekdayNames = getWeekdayNames();
   const hasDayContent = (day: WeeklyReportDay) => day.tasks.length > 0 || (day.standalone_groups?.length || 0) > 0;
 
@@ -136,14 +135,6 @@ function reportToMarkdown(r: WeeklyReportData, start: string, end: string, secti
     md += `- ${i18n.t('weeklyReport.activeDays') || 'Active Days'}: ${activeDays}/7\n`;
     md += `- ${i18n.t('weeklyReport.tagsInvolved') || 'Tags'}: ${tagNames.length > 0 ? tagNames.join(', ') : '-'}\n`;
     md += `- ${i18n.t('weeklyReport.subtaskProgress') || 'Subtask Progress'}: ${subtaskPct}\n\n`;
-  }
-
-  if (sections.weekly) {
-    md += `## ${i18n.t('weeklyReport.weeklySummary') || 'Weekly Summary'}\n\n`;
-    md += `| ${i18n.t('weeklyReport.week') || 'Week'} | ${i18n.t('weeklyReport.completedTasks') || 'Completed Tasks'} | ${i18n.t('weeklyReport.activeDays') || 'Active Days'} | ${i18n.t('weeklyReport.tagsInvolved') || 'Tags'} | ${i18n.t('weeklyReport.subtaskProgress') || 'Subtask Progress'} |\n`;
-    md += `|------|------|------|------|------|\n`;
-    const tagsStr = tagNames.length > 0 ? tagNames.join(', ') : '-';
-    md += `| ${start} ~ ${end} | ${totalTasks} | ${activeDays}/7 | ${tagsStr} | ${subtaskPct} |\n\n`;
   }
 
   if (sections.weekTasks) {
@@ -281,6 +272,7 @@ export default function WeeklyReport() {
   useEffect(() => { load(); }, [load]);
 
   useEffect(() => {
+    if (exportFrom > exportTo) return;
     const reqId = ++cacheReqIdRef.current;
     setCacheLoading(true);
     const reports: Record<string, WeeklyReportData> = {};
@@ -312,7 +304,7 @@ export default function WeeklyReport() {
 
   const handleExport = async () => {
     if (!report) return;
-    const md = reportToMarkdown(report, weekStart, weekEnd, { overview: true, weekly: false, daily: true, summary: true });
+    const md = reportToMarkdown(report, weekStart, weekEnd, { overview: true, daily: true, summary: true });
     const ok = await copyToClipboard(md);
     showToast(ok ? t('weeklyReport.copied') : t('weeklyReport.copyFailManual'), ok ? 'success' : 'error');
   };
@@ -325,7 +317,7 @@ export default function WeeklyReport() {
       return;
     }
     if (cacheLoading) {
-      showToast(t('weeklyReport.exporting'), 'error');
+      showToast(t('weeklyReport.exporting'), 'warning');
       return;
     }
     const reports: WeeklyReportData[] = [];
@@ -359,7 +351,7 @@ export default function WeeklyReport() {
             });
           }
         }
-        perWeekMd += reportToMarkdown(r, currentWeek, addDays(currentWeek, 6), { overview: false, weekly: false, daily: false, summary: false, weekTasks: true }, true) + '\n---\n\n';
+        perWeekMd += reportToMarkdown(r, currentWeek, addDays(currentWeek, 6), { overview: false, daily: false, summary: false, weekTasks: true }, true) + '\n---\n\n';
       }
     }
 
@@ -391,6 +383,8 @@ export default function WeeklyReport() {
     copyToClipboard(finalMd.trimEnd()).then((ok) => {
       showToast(ok ? t('weeklyReport.copied') : t('weeklyReport.copyFail'), ok ? 'success' : 'error');
       if (ok) setShowExport(false);
+    }).catch(() => {
+      showToast(t('weeklyReport.copyFail'), 'error');
     });
   };
 
@@ -518,7 +512,7 @@ export default function WeeklyReport() {
             {Object.entries(report.summary_by_tag).map(([tag, items]) => (
               <div key={tag}>
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="inline-block bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-sm font-medium px-2 py-0.5 rounded">{tag}</span>
+                  <span className="inline-block bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-sm font-medium px-2 py-0.5 rounded">{tag === 'untagged' ? (t('common.noTags') || 'No Tags') : tag}</span>
                   <span className="text-xs text-gray-400">{items.length} {t('weeklyReport.itemsWork')}</span>
                 </div>
                 <div className="space-y-2 ml-1">

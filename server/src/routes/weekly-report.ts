@@ -174,7 +174,7 @@ router.get('/', (req, res) => {
 
       summaryItems.push({
         content: g.parent_task_content,
-        notes: g.parent_notes,
+        notes: g.parent_notes || '',
         done_subtasks: doneCount,
         total_subtasks: g.total_subtasks,
         subtask_tree: tree,

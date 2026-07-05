@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { tasksApi, subtasksApi, tagsApi } from '../api';
 import { showToast } from '../components/Toast';
@@ -169,7 +169,7 @@ export default function Tasks() {
   const [inlineSubNotes, setInlineSubNotes] = useState('');
 
   const [tagList, setTagList] = useState<Tag[]>([]);
-  const tagColorMap = new Map(tagList.map(t => [t.name, t.color || '#3b82f6']));
+  const tagColorMap = useMemo(() => new Map(tagList.map(t => [t.name, t.color || '#3b82f6'])), [tagList]);
 
   const [editingSub, setEditingSub] = useState<{ taskId: number; subId: number } | null>(null);
   const [subEditText, setSubEditText] = useState('');

@@ -68,6 +68,7 @@ export interface DashboardData {
 export interface SubtaskNode {
   id: number;
   content: string;
+  notes?: string;
   status: string;
   parent_subtask_id: number | null;
   children: SubtaskNode[];
