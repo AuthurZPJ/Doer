@@ -411,17 +411,17 @@ export default function WeeklyReport() {
               className="text-left px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300 transition-base"
             >
               <div className="font-medium">{t('weeklyReport.exportCurrentWeek')} ({weekStart} ~ {weekEnd})</div>
-              <div className="text-xs text-gray-400 mt-0.5">{t('weeklyReport.singleWeekHint')}</div>
+              <div className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">{t('weeklyReport.singleWeekHint')}</div>
             </button>
             <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg flex-wrap">
               <div className="w-full mb-1">
                 <span className="text-sm text-gray-600 dark:text-gray-400">{t('weeklyReport.exportRange')}</span>
-                <span className="text-xs text-gray-400 ml-2">{t('weeklyReport.multiWeekHint')}</span>
+                <span className="text-xs text-gray-400 dark:text-gray-500 ml-2">{t('weeklyReport.multiWeekHint')}</span>
               </div>
               <DatePicker value={exportFrom} onChange={(v) => setExportFrom(getWeekStart(v))} />
-              <span className="text-gray-400">~</span>
+              <span className="text-gray-400 dark:text-gray-500">~</span>
               <DatePicker value={exportTo} onChange={(v) => setExportTo(getWeekStart(v))} />
-              <span className="text-xs text-gray-400">{exportFrom} ~ {addDays(exportTo, 6)}</span>
+              <span className="text-xs text-gray-400 dark:text-gray-500">{exportFrom} ~ {addDays(exportTo, 6)}</span>
               <button
                 onClick={handleExportRange}
                 disabled={cacheLoading}
@@ -444,7 +444,7 @@ export default function WeeklyReport() {
             <p className="text-sm text-gray-500 dark:text-gray-400">
               {t('weeklyReport.weeklyTotal')} <span className="font-semibold text-gray-700 dark:text-gray-200">{totalTasks}</span> {t('weeklyReport.itemsWork')}
               {report.subtask_stats && report.subtask_stats.total_subtasks > 0 && (
-                <span className="ml-2 text-gray-400">· {t('weeklyReport.subtasks')} {report.subtask_stats.total_done}/{report.subtask_stats.total_subtasks} {t('weeklyReport.completedLabel')}</span>
+                <span className="ml-2 text-gray-400 dark:text-gray-500">· {t('weeklyReport.subtasks')} {report.subtask_stats.total_done}/{report.subtask_stats.total_subtasks} {t('weeklyReport.completedLabel')}</span>
               )}
             </p>
           </div>
@@ -513,7 +513,7 @@ export default function WeeklyReport() {
               <div key={tag}>
                 <div className="flex items-center gap-2 mb-2">
                   <span className="inline-block bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-sm font-medium px-2 py-0.5 rounded">{tag === 'untagged' ? (t('common.noTags') || 'No Tags') : tag}</span>
-                  <span className="text-xs text-gray-400">{items.length} {t('weeklyReport.itemsWork')}</span>
+                  <span className="text-xs text-gray-400 dark:text-gray-500">{items.length} {t('weeklyReport.itemsWork')}</span>
                 </div>
                 <div className="space-y-2 ml-1">
                   {items.map((item, i) => (

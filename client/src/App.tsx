@@ -27,7 +27,7 @@ export default function App() {
             <Route path="/tags" element={<TagsPage />} />
             <Route path="*" element={
               <div className="flex flex-col items-center justify-center h-full gap-4">
-                <p className="text-2xl text-gray-400">404</p>
+                <p className="text-2xl text-gray-400 dark:text-gray-500">404</p>
               </div>
             } />
           </Route>
