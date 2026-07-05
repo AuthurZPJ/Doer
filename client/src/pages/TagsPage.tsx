@@ -96,7 +96,7 @@ export default function TagsPage() {
                 <button
                   key={color}
                   onClick={() => setNewColor(color)}
-                  className={`w-6 h-6 rounded-full border-2 ${newColor === color ? 'border-gray-800' : 'border-transparent'} transition-base`}
+                  className={`w-6 h-6 rounded-full border-2 ${newColor === color ? 'border-gray-800 dark:border-gray-200' : 'border-transparent'} transition-base`}
                   style={{ backgroundColor: color }}
                 />
               ))}
@@ -134,7 +134,7 @@ export default function TagsPage() {
                       <button
                         key={color}
                         onClick={() => setEditColor(color)}
-                        className={`w-5 h-5 rounded-full border-2 ${editColor === color ? 'border-gray-800' : 'border-transparent'} transition-base`}
+                        className={`w-5 h-5 rounded-full border-2 ${editColor === color ? 'border-gray-800 dark:border-gray-200' : 'border-transparent'} transition-base`}
                         style={{ backgroundColor: color }}
                       />
                     ))}

@@ -56,7 +56,7 @@ export default function TagInput({ value, onChange }: TagInputProps) {
 
   return (
     <div ref={ref} className="relative">
-      <div className="flex flex-wrap gap-1 items-center min-h-[2.5rem] border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-base">
+      <div className="flex flex-wrap gap-1 items-center min-h-[2.5rem] border border-gray-300 dark:border-gray-600 rounded-lg px-2 py-1 focus-within:ring-2 focus-within:ring-blue-500 focus-within:border-transparent transition-base bg-white dark:bg-gray-800">
         {currentTags.map(tag => (
           <span
             key={tag}
