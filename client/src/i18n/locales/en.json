@@ -40,12 +40,14 @@
     "complete": "Complete",
     "completed": "Completed",
     "inProgress": "In Progress",
+    "status": "Status",
     "tags": "Tags",
     "reopen": "Reopen",
     "reopened": "Reopened",
     "optionalTags": "Optional tags",
     "tagExists": "Tag already exists",
-    "tagNameExists": "Tag name already exists"
+    "tagNameExists": "Tag name already exists",
+    "noTags": "No tags"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -72,7 +74,9 @@
     "createdAt": "Created at",
     "notCompleted": "Not completed",
     "dueDate": "Due",
-    "overdue": "Overdue"
+    "overdue": "Overdue",
+    "notes": "Notes/Summary",
+    "notesPlaceholder": "Add notes or completion summary (optional)..."
   },
   "todos": {
     "title": "Future Plans",
@@ -115,8 +119,9 @@
     "export": "Export",
     "exportOptions": "Export Options",
     "exportCurrentWeek": "Export current week",
+    "singleWeekHint": "Includes overview + daily details + tag summary",
+    "multiWeekHint": "Includes global tag summary + per-week task details",
     "exportRange": "Export week range:",
-    "exportFromToThis": "From specified week to this week:",
     "exporting": "Exporting...",
     "dailyComplete": "Daily Completion",
     "summaryByTag": "Summary by Tag",
@@ -131,12 +136,13 @@
     "copyFail": "Copy failed",
     "copyFailManual": "Copy failed, please copy manually",
     "startAfterEnd": "Start week cannot be after end week",
-    "startAfterThis": "Start week cannot be after this week",
     "noRecordsRange": "No records in this range",
     "exportFail": "Export failed",
     "reportTitle": "Weekly Report",
     "subtaskStats": "Subtasks",
     "overview": "Overview",
+    "weeklySummary": "Weekly Summary",
+    "week": "Week",
     "dateRange": "Date Range",
     "completedTasks": "Completed Tasks",
     "activeDays": "Active Days",
@@ -144,7 +150,10 @@
     "subtaskProgress": "Subtask Progress",
     "progress": "Progress",
     "task": "Task",
-    "inProgressSubtasks": "In-Progress Task Subtasks"
+    "inProgressSubtasks": "In-Progress Task Subtasks",
+    "aiPreamble": "> This document is an exported work weekly report for performance review. Data format: each task includes content, tags, progress, status, and notes (remarks/summary). Subtasks are marked with [x]/[ ] for done/undone. Based on the content above, please output:\n> 1. **Work Overview**: 2-3 sentences summarizing the main work directions of this period\n> 2. **By Tag**: List specific achievements per work stream, grouped by tag (quote task content, do not fabricate)\n> 3. **Quantitative Data**: Only quote task counts and subtask progress that appear in the text; do not calculate or fabricate\n> 4. **Highlights & Follow-ups**: Extract 1-2 highlights and items to follow up (only from notes and incomplete subtasks)\n> Requirements: concise, objective, based solely on document facts, no exaggeration or addition.",
+    "globalTagSummary": "Global Tag Summary",
+    "total": "Total"
   },
   "search": {
     "title": "Global Search",

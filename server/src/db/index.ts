@@ -65,6 +65,12 @@ function migrate(db: Database.Database): void {
   if (taskCols2.length > 0 && !taskCols2.some(c => c.name === 'due_date')) {
     db.exec("ALTER TABLE tasks ADD COLUMN due_date TEXT");
   }
+  if (taskCols2.length > 0 && !taskCols2.some(c => c.name === 'notes')) {
+    db.exec("ALTER TABLE tasks ADD COLUMN notes TEXT DEFAULT ''");
+  }
+  if (taskCols2.length > 0 && !taskCols2.some(c => c.name === 'sort_order')) {
+    db.exec("ALTER TABLE tasks ADD COLUMN sort_order INTEGER NOT NULL DEFAULT 0");
+  }
 
   const subtaskCols = db.prepare("PRAGMA table_info(subtasks)").all() as any[];
   if (subtaskCols.length > 0) {
@@ -73,6 +79,9 @@ function migrate(db: Database.Database): void {
     }
     if (!subtaskCols.some(c => c.name === 'parent_subtask_id')) {
       db.exec("ALTER TABLE subtasks ADD COLUMN parent_subtask_id INTEGER REFERENCES subtasks(id) ON DELETE CASCADE");
+    }
+    if (!subtaskCols.some(c => c.name === 'notes')) {
+      db.exec("ALTER TABLE subtasks ADD COLUMN notes TEXT DEFAULT ''");
     }
   }
 }

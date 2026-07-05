@@ -19,7 +19,8 @@ api.interceptors.response.use(
 export const tasksApi = {
   list: (params?: { status?: string; date?: string }): Promise<Task[]> => api.get('/tasks', { params }).then(r => r.data),
   create: (data: { content: string; tags?: string; status?: string; due_date?: string | null }): Promise<{ id: number }> => api.post('/tasks', data).then(r => r.data),
-  update: (id: number, data: Partial<Pick<Task, 'content' | 'tags' | 'status' | 'due_date'>>): Promise<{ ok: boolean }> => api.put(`/tasks/${id}`, data).then(r => r.data),
+  update: (id: number, data: Partial<Pick<Task, 'content' | 'tags' | 'notes' | 'status' | 'due_date'>>): Promise<{ ok: boolean }> => api.put(`/tasks/${id}`, data).then(r => r.data),
+  reorder: (items: { id: number; sort_order: number }[]): Promise<{ ok: boolean }> => api.patch('/tasks/reorder', { items }).then(r => r.data),
   delete: (id: number): Promise<{ ok: boolean }> => api.delete(`/tasks/${id}`).then(r => r.data),
 };
 
@@ -69,7 +70,8 @@ export const backupApi = {
 export const subtasksApi = {
   list: (taskId: number): Promise<Subtask[]> => api.get(`/tasks/${taskId}/subtasks`).then(r => r.data),
   create: (taskId: number, content: string, parentSubtaskId?: number | null): Promise<{ id: number }> => api.post(`/tasks/${taskId}/subtasks`, { content, parent_subtask_id: parentSubtaskId ?? null }).then(r => r.data),
-  update: (taskId: number, id: number, data: Partial<Pick<Subtask, 'content' | 'status' | 'sort_order' | 'parent_subtask_id'>>): Promise<{ ok: boolean }> => api.put(`/tasks/${taskId}/subtasks/${id}`, data).then(r => r.data),
+  update: (taskId: number, id: number, data: Partial<Pick<Subtask, 'content' | 'notes' | 'status' | 'sort_order' | 'parent_subtask_id'>>): Promise<{ ok: boolean }> => api.put(`/tasks/${taskId}/subtasks/${id}`, data).then(r => r.data),
+  reorder: (taskId: number, items: { id: number; sort_order: number; parent_subtask_id: number | null }[]): Promise<{ ok: boolean }> => api.patch(`/tasks/${taskId}/subtasks/reorder`, { items }).then(r => r.data),
   delete: (taskId: number, id: number): Promise<{ ok: boolean }> => api.delete(`/tasks/${taskId}/subtasks/${id}`).then(r => r.data),
 };
 

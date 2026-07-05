@@ -28,7 +28,7 @@ router.post('/', (req: Request, res: Response) => {
 });
 
 router.put('/:id', (req: Request, res: Response) => {
-  const { content, status, sort_order, parent_subtask_id } = req.body;
+  const { content, notes, status, sort_order, parent_subtask_id } = req.body;
   const db = getDb();
   const taskId = req.params.taskId as string;
   const subtask = db.prepare('SELECT * FROM subtasks WHERE id = ? AND task_id = ?').get(req.params.id, taskId) as any;
@@ -36,6 +36,7 @@ router.put('/:id', (req: Request, res: Response) => {
 
   const updates: Record<string, any> = {};
   if (content !== undefined) updates.content = content;
+  if (notes !== undefined) updates.notes = notes;
   if (status !== undefined) {
     if (!isValidSubtaskStatus(status)) return res.status(400).json({ error: 'invalid status' });
     updates.status = status;
@@ -51,6 +52,21 @@ router.put('/:id', (req: Request, res: Response) => {
   const setClause = Object.keys(updates).map(k => `${k} = ?`).join(', ');
   const values = [...Object.values(updates), req.params.id];
   db.prepare(`UPDATE subtasks SET ${setClause} WHERE id = ? AND task_id = ?`).run(...values, taskId);
+  res.json({ ok: true });
+});
+
+router.patch('/reorder', (req: Request, res: Response) => {
+  const taskId = req.params.taskId as string;
+  const { items } = req.body as { items: { id: number; sort_order: number; parent_subtask_id: number | null }[] };
+  if (!Array.isArray(items)) return res.status(400).json({ error: 'items must be an array' });
+  const db = getDb();
+  const stmt = db.prepare('UPDATE subtasks SET sort_order = ?, parent_subtask_id = ? WHERE id = ? AND task_id = ?');
+  const tx = db.transaction(() => {
+    for (const item of items) {
+      stmt.run(item.sort_order, item.parent_subtask_id, item.id, taskId);
+    }
+  });
+  tx();
   res.json({ ok: true });
 });
 

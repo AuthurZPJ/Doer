@@ -11,7 +11,7 @@ router.get('/', (req, res) => {
 
   if (status === 'in_progress') {
     const rows = getDb().prepare(
-      "SELECT * FROM tasks WHERE status = 'in_progress' ORDER BY created_at ASC"
+      "SELECT * FROM tasks WHERE status = 'in_progress' ORDER BY sort_order ASC, created_at ASC"
     ).all();
     res.json(rows);
   } else if (date) {
@@ -28,21 +28,21 @@ router.get('/', (req, res) => {
 });
 
 router.post('/', (req, res) => {
-  const { content, tags = '', status = 'in_progress', due_date = null } = req.body;
+  const { content, tags = '', notes = '', status = 'in_progress', due_date = null } = req.body;
   if (!content) return res.status(400).json({ error: 'content is required' });
   if (!isValidStatus(status)) return res.status(400).json({ error: 'invalid status' });
   if (!isValidDate(due_date)) return res.status(400).json({ error: 'invalid due_date' });
   const now = new Date().toISOString();
   const completedAt = status === 'completed' ? todayStr() : null;
   const info = getDb().prepare(
-    'INSERT INTO tasks (content, tags, status, due_date, completed_at, created_at) VALUES (?, ?, ?, ?, ?, ?)'
-  ).run(content, tags, status, due_date, completedAt, now);
+    'INSERT INTO tasks (content, tags, notes, status, due_date, completed_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)'
+  ).run(content, tags, notes, status, due_date, completedAt, now);
   saveTags(tags);
   res.status(201).json({ id: info.lastInsertRowid });
 });
 
 router.put('/:id', (req, res) => {
-  const { content, tags, status, due_date } = req.body;
+  const { content, tags, notes, status, due_date } = req.body;
   const db = getDb();
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id) as any;
   if (!task) return res.status(404).json({ error: 'task not found' });
@@ -50,6 +50,7 @@ router.put('/:id', (req, res) => {
   const updates: Record<string, any> = {};
   if (content !== undefined) updates.content = content;
   if (tags !== undefined) updates.tags = tags;
+  if (notes !== undefined) updates.notes = notes;
   if (due_date !== undefined) {
     if (!isValidDate(due_date)) return res.status(400).json({ error: 'invalid due_date' });
     updates.due_date = due_date;
@@ -74,6 +75,20 @@ router.put('/:id', (req, res) => {
 router.delete('/:id', (req, res) => {
   const info = getDb().prepare('DELETE FROM tasks WHERE id = ?').run(req.params.id);
   if (info.changes === 0) return res.status(404).json({ error: 'task not found' });
+  res.json({ ok: true });
+});
+
+router.patch('/reorder', (req, res) => {
+  const { items } = req.body as { items: { id: number; sort_order: number }[] };
+  if (!Array.isArray(items)) return res.status(400).json({ error: 'items must be an array' });
+  const db = getDb();
+  const stmt = db.prepare('UPDATE tasks SET sort_order = ? WHERE id = ? AND status = ?');
+  const tx = db.transaction(() => {
+    for (const item of items) {
+      stmt.run(item.sort_order, item.id, 'in_progress');
+    }
+  });
+  tx();
   res.json({ ok: true });
 });
 

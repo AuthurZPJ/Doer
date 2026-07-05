@@ -40,12 +40,14 @@
     "complete": "完成",
     "completed": "已完成",
     "inProgress": "进行中",
+    "status": "状态",
     "tags": "标签",
     "reopen": "重新打开",
     "reopened": "已重新打开",
     "optionalTags": "可选标签",
     "tagExists": "标签已存在",
-    "tagNameExists": "标签名已存在"
+    "tagNameExists": "标签名已存在",
+    "noTags": "无标签"
   },
   "dashboard": {
     "title": "今日看板",
@@ -72,7 +74,9 @@
     "createdAt": "创建于",
     "notCompleted": "未完成",
     "dueDate": "截止",
-    "overdue": "已逾期"
+    "overdue": "已逾期",
+    "notes": "备注/总结",
+    "notesPlaceholder": "写点备注或完成总结（可选）..."
   },
   "todos": {
     "title": "未来计划",
@@ -115,8 +119,9 @@
     "export": "导出",
     "exportOptions": "导出选项",
     "exportCurrentWeek": "导出当前周",
+    "singleWeekHint": "含概况 + 每日明细 + 标签汇总",
+    "multiWeekHint": "含全局标签汇总 + 各周任务明细",
     "exportRange": "导出周区间:",
-    "exportFromToThis": "从指定周至本周:",
     "exporting": "导出中...",
     "dailyComplete": "每日完成",
     "summaryByTag": "按标签汇总",
@@ -131,12 +136,13 @@
     "copyFail": "复制失败",
     "copyFailManual": "复制失败，请手动复制",
     "startAfterEnd": "起始周不能晚于结束周",
-    "startAfterThis": "起始周不能晚于本周",
     "noRecordsRange": "该区间暂无记录",
     "exportFail": "导出失败",
     "reportTitle": "周报",
     "subtaskStats": "子任务",
     "overview": "概况",
+    "weeklySummary": "每周汇总",
+    "week": "周",
     "dateRange": "日期范围",
     "completedTasks": "已完成任务",
     "activeDays": "活跃天数",
@@ -144,7 +150,10 @@
     "subtaskProgress": "子任务进度",
     "progress": "进度",
     "task": "任务",
-    "inProgressSubtasks": "进行中任务的已完成子项"
+    "inProgressSubtasks": "进行中任务的已完成子项",
+    "aiPreamble": "> 本文档为工作周报导出，用于考评总结。数据说明：每条任务含内容、标签、进度、状态、notes（备注/总结）。子任务用 [x]/[ ] 标记完成状态。请基于以上内容输出：\n> 1. **工作概述**：2-3 句概括本期主要工作方向\n> 2. **按标签分类**：按标签分组列出各工作线的具体成果（引用任务内容，不要编造）\n> 3. **量化数据**：仅引用文中出现的任务数和子任务进度，不要自行计算或编造\n> 4. **亮点与待跟进**：提炼 1-2 个亮点和待跟进事项（仅从 notes 和未完成子任务中提取）\n> 要求：简洁、客观、只基于文档事实，不夸大不补充。",
+    "globalTagSummary": "全局标签汇总",
+    "total": "合计"
   },
   "search": {
     "title": "全局搜索",

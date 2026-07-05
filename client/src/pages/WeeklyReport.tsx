@@ -29,6 +29,7 @@ function getWeekdayNames() {
 interface SubtaskNode {
   id: number;
   content: string;
+  notes?: string;
   status: string;
   children?: SubtaskNode[];
 }
@@ -39,6 +40,9 @@ function renderSubtaskTree(nodes: SubtaskNode[]) {
       <div className="flex items-center gap-2 py-0.5">
         <span className={`text-xs ${node.status === 'done' ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-500 dark:text-gray-400'}`}>{node.content}</span>
       </div>
+      {node.notes && node.notes.trim() && (
+        <p className="ml-3 text-xs text-gray-400 dark:text-gray-500 italic whitespace-pre-wrap">{node.notes.trim()}</p>
+      )}
       {node.children && node.children.length > 0 && (
         <div className="ml-3 pl-3 border-l border-gray-200 dark:border-gray-600 space-y-0.5">
           {renderSubtaskTree(node.children)}
@@ -54,6 +58,9 @@ function flattenToMarkdown(nodes: SubtaskNode[], depth: number): string {
   for (const node of nodes) {
     const checked = node.status === 'done' ? '[x]' : '[ ]';
     out += `${indent}- ${checked} ${node.content}\n`;
+    if (node.notes && node.notes.trim()) {
+      out += `${indent}  > ${node.notes.trim().replace(/\n/g, '\n' + indent + '  > ')}\n`;
+    }
     if (node.children && node.children.length > 0) {
       out += flattenToMarkdown(node.children, depth + 1);
     }
@@ -66,23 +73,27 @@ function pct(done: number, total: number): string {
   return `(${(done / total * 100).toFixed(1)}%)`;
 }
 
-function copyToClipboard(text: string): boolean {
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(text);
+async function copyToClipboard(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
     return true;
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.top = '0';
+    ta.style.left = '0';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    ta.setSelectionRange(0, text.length);
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch {}
+    document.body.removeChild(ta);
+    return ok;
   }
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.position = 'fixed';
-  ta.style.opacity = '0';
-  document.body.appendChild(ta);
-  ta.select();
-  let ok = false;
-  try { ok = document.execCommand('copy'); } catch {}
-  document.body.removeChild(ta);
-  return ok;
 }
-
 function TagBadge({ tags }: { tags: string }) {
   if (!tags) return null;
   return (
@@ -94,7 +105,15 @@ function TagBadge({ tags }: { tags: string }) {
   );
 }
 
-function reportToMarkdown(r: WeeklyReportData, start: string, end: string): string {
+interface ExportSections {
+  overview: boolean;
+  weekly: boolean;
+  daily: boolean;
+  summary: boolean;
+  weekTasks?: boolean;
+}
+
+function reportToMarkdown(r: WeeklyReportData, start: string, end: string, sections: ExportSections = { overview: true, weekly: false, daily: true, summary: true }, skipPreamble = false): string {
   const weekdayNames = getWeekdayNames();
   const hasDayContent = (day: WeeklyReportDay) => day.tasks.length > 0 || (day.standalone_groups?.length || 0) > 0;
 
@@ -106,60 +125,127 @@ function reportToMarkdown(r: WeeklyReportData, start: string, end: string): stri
     : `${r.subtask_stats?.total_done || 0}/${r.subtask_stats?.total_subtasks || 0}`;
 
   let md = `# ${i18n.t('weeklyReport.reportTitle')} ${start} ~ ${end}\n\n`;
-  md += `## ${i18n.t('weeklyReport.overview') || 'Overview'}\n\n`;
-  md += `- ${i18n.t('weeklyReport.dateRange') || 'Date Range'}: ${start} ~ ${end}\n`;
-  md += `- ${i18n.t('weeklyReport.completedTasks') || 'Completed Tasks'}: ${totalTasks}\n`;
-  md += `- ${i18n.t('weeklyReport.activeDays') || 'Active Days'}: ${activeDays}/7\n`;
-  md += `- ${i18n.t('weeklyReport.tagsInvolved') || 'Tags'}: ${tagNames.length > 0 ? tagNames.join(', ') : '-'}\n`;
-  md += `- ${i18n.t('weeklyReport.subtaskProgress') || 'Subtask Progress'}: ${subtaskPct}\n\n`;
+  if (!skipPreamble) {
+    md += `${i18n.t('weeklyReport.aiPreamble')}\n\n`;
+  }
 
-  md += `## ${i18n.t('weeklyReport.dailyComplete')}\n\n`;
-  for (const day of r.days) {
-    if (!hasDayContent(day)) continue;
-    const weekday = weekdayNames[parseLocalDate(day.date).getDay() === 0 ? 6 : parseLocalDate(day.date).getDay() - 1];
-    md += `### ${day.date} ${weekday}\n`;
+  if (sections.overview) {
+    md += `## ${i18n.t('weeklyReport.overview') || 'Overview'}\n\n`;
+    md += `- ${i18n.t('weeklyReport.dateRange') || 'Date Range'}: ${start} ~ ${end}\n`;
+    md += `- ${i18n.t('weeklyReport.completedTasks') || 'Completed Tasks'}: ${totalTasks}\n`;
+    md += `- ${i18n.t('weeklyReport.activeDays') || 'Active Days'}: ${activeDays}/7\n`;
+    md += `- ${i18n.t('weeklyReport.tagsInvolved') || 'Tags'}: ${tagNames.length > 0 ? tagNames.join(', ') : '-'}\n`;
+    md += `- ${i18n.t('weeklyReport.subtaskProgress') || 'Subtask Progress'}: ${subtaskPct}\n\n`;
+  }
 
-    if (day.tasks.length > 0) {
-      md += `\n**${i18n.t('weeklyReport.completedTasks') || 'Completed Tasks'}**\n\n`;
-      let idx = 1;
+  if (sections.weekly) {
+    md += `## ${i18n.t('weeklyReport.weeklySummary') || 'Weekly Summary'}\n\n`;
+    md += `| ${i18n.t('weeklyReport.week') || 'Week'} | ${i18n.t('weeklyReport.completedTasks') || 'Completed Tasks'} | ${i18n.t('weeklyReport.activeDays') || 'Active Days'} | ${i18n.t('weeklyReport.tagsInvolved') || 'Tags'} | ${i18n.t('weeklyReport.subtaskProgress') || 'Subtask Progress'} |\n`;
+    md += `|------|------|------|------|------|\n`;
+    const tagsStr = tagNames.length > 0 ? tagNames.join(', ') : '-';
+    md += `| ${start} ~ ${end} | ${totalTasks} | ${activeDays}/7 | ${tagsStr} | ${subtaskPct} |\n\n`;
+  }
+
+  if (sections.weekTasks) {
+    let idx = 1;
+    const allTasks: { content: string; tags: string; notes: string; done_subtasks: number; total_subtasks: number; subtask_tree: SubtaskNode[] }[] = [];
+    const allGroups: { parent_task_content: string; parent_tags: string; done_subtasks: number; total_subtasks: number; subtask_tree: SubtaskNode[] }[] = [];
+    for (const day of r.days) {
+      if (!hasDayContent(day)) continue;
       for (const task of day.tasks) {
+        allTasks.push(task);
+      }
+      for (const g of (day.standalone_groups || [])) {
+        allGroups.push(g);
+      }
+    }
+    if (allTasks.length > 0) {
+      md += `\n**${i18n.t('weeklyReport.completedTasks') || 'Completed Tasks'}**\n\n`;
+      for (const task of allTasks) {
         const progress = task.total_subtasks > 0 ? ` \`${i18n.t('weeklyReport.progress') || 'Progress'}: ${task.done_subtasks}/${task.total_subtasks} ${pct(task.done_subtasks, task.total_subtasks)}\`` : '';
         const tags = task.tags ? ` \`${i18n.t('common.tags') || 'Tags'}: ${task.tags}\`` : '';
         md += `${idx}. ${task.content}${tags}${progress}\n`;
+        if (task.notes && task.notes.trim()) {
+          md += `   > ${task.notes.trim().replace(/\n/g, '\n   > ')}\n`;
+        }
         if (task.subtask_tree && task.subtask_tree.length > 0) {
           md += flattenToMarkdown(task.subtask_tree, 1);
         }
         idx++;
       }
     }
-
-    if ((day.standalone_groups?.length || 0) > 0) {
+    if (allGroups.length > 0) {
       md += `\n**${i18n.t('weeklyReport.inProgressSubtasks') || 'In-Progress Task Subtasks'}**\n\n`;
-      let idx = 1;
-      for (const g of (day.standalone_groups || [])) {
+      let gIdx = 1;
+      for (const g of allGroups) {
         const progress = g.total_subtasks > 0 ? ` \`${i18n.t('weeklyReport.progress') || 'Progress'}: ${g.done_subtasks}/${g.total_subtasks} ${pct(g.done_subtasks, g.total_subtasks)}\`` : '';
         const tags = g.parent_tags ? ` \`${i18n.t('common.tags') || 'Tags'}: ${g.parent_tags}\`` : '';
-        md += `${idx}. ${g.parent_task_content}${tags}${progress}\n`;
+        md += `${gIdx}. ${g.parent_task_content}${tags}${progress}\n`;
         if (g.subtask_tree && g.subtask_tree.length > 0) {
           md += flattenToMarkdown(g.subtask_tree, 1);
         }
-        idx++;
+        gIdx++;
       }
     }
     md += '\n';
   }
 
-  md += `## ${i18n.t('weeklyReport.summaryByTag')}\n\n`;
-  for (const [tag, items] of Object.entries(r.summary_by_tag)) {
-    md += `### ${tag} (${items.length})\n\n`;
-    md += `| ${i18n.t('weeklyReport.task') || 'Task'} | ${i18n.t('weeklyReport.progress') || 'Progress'} | ${i18n.t('common.status') || 'Status'} |\n`;
-    md += `|------|------|------|\n`;
-    for (const item of items) {
-      const progress = item.total_subtasks > 0 ? `${item.done_subtasks}/${item.total_subtasks} ${pct(item.done_subtasks, item.total_subtasks)}` : '-';
-      const status = item.is_in_progress_parent ? i18n.t('common.inProgress') || 'In Progress' : i18n.t('common.completed') || 'Completed';
-      md += `| ${item.content} | ${progress} | ${status} |\n`;
+  if (sections.daily) {
+    md += `## ${i18n.t('weeklyReport.dailyComplete')}\n\n`;
+    for (const day of r.days) {
+      if (!hasDayContent(day)) continue;
+      const weekday = weekdayNames[parseLocalDate(day.date).getDay() === 0 ? 6 : parseLocalDate(day.date).getDay() - 1];
+      md += `### ${day.date} ${weekday}\n`;
+
+      if (day.tasks.length > 0) {
+        md += `\n**${i18n.t('weeklyReport.completedTasks') || 'Completed Tasks'}**\n\n`;
+        let idx = 1;
+        for (const task of day.tasks) {
+          const progress = task.total_subtasks > 0 ? ` \`${i18n.t('weeklyReport.progress') || 'Progress'}: ${task.done_subtasks}/${task.total_subtasks} ${pct(task.done_subtasks, task.total_subtasks)}\`` : '';
+          const tags = task.tags ? ` \`${i18n.t('common.tags') || 'Tags'}: ${task.tags}\`` : '';
+          md += `${idx}. ${task.content}${tags}${progress}\n`;
+          if (task.notes && task.notes.trim()) {
+            md += `   > ${task.notes.trim().replace(/\n/g, '\n   > ')}\n`;
+          }
+          if (task.subtask_tree && task.subtask_tree.length > 0) {
+            md += flattenToMarkdown(task.subtask_tree, 1);
+          }
+          idx++;
+        }
+      }
+
+      if ((day.standalone_groups?.length || 0) > 0) {
+        md += `\n**${i18n.t('weeklyReport.inProgressSubtasks') || 'In-Progress Task Subtasks'}**\n\n`;
+        let idx = 1;
+        for (const g of (day.standalone_groups || [])) {
+          const progress = g.total_subtasks > 0 ? ` \`${i18n.t('weeklyReport.progress') || 'Progress'}: ${g.done_subtasks}/${g.total_subtasks} ${pct(g.done_subtasks, g.total_subtasks)}\`` : '';
+          const tags = g.parent_tags ? ` \`${i18n.t('common.tags') || 'Tags'}: ${g.parent_tags}\`` : '';
+          md += `${idx}. ${g.parent_task_content}${tags}${progress}\n`;
+          if (g.subtask_tree && g.subtask_tree.length > 0) {
+            md += flattenToMarkdown(g.subtask_tree, 1);
+          }
+          idx++;
+        }
+      }
+      md += '\n';
     }
-    md += '\n';
+  }
+
+  if (sections.summary) {
+    md += `## ${i18n.t('weeklyReport.summaryByTag')}\n\n`;
+    for (const [tag, items] of Object.entries(r.summary_by_tag)) {
+      const tagLabel = tag === 'untagged' ? (i18n.t('common.noTags') || 'No Tags') : tag;
+      md += `### ${tagLabel} (${items.length})\n\n`;
+      md += `| ${i18n.t('weeklyReport.task') || 'Task'} | ${i18n.t('weeklyReport.progress') || 'Progress'} | ${i18n.t('common.status') || 'Status'} | ${i18n.t('tasks.notes') || 'Notes'} |\n`;
+      md += `|------|------|------|------|\n`;
+      for (const item of items) {
+        const progress = item.total_subtasks > 0 ? `${item.done_subtasks}/${item.total_subtasks} ${pct(item.done_subtasks, item.total_subtasks)}` : '-';
+        const status = item.is_in_progress_parent ? i18n.t('common.inProgress') || 'In Progress' : i18n.t('common.completed') || 'Completed';
+        const notes = item.notes && item.notes.trim() ? item.notes.trim().replace(/\|/g, '/').replace(/\n/g, ' ') : '-';
+        md += `| ${item.content} | ${progress} | ${status} | ${notes} |\n`;
+      }
+      md += '\n';
+    }
   }
   return md;
 }
@@ -173,9 +259,10 @@ export default function WeeklyReport() {
   const [showExport, setShowExport] = useState(false);
   const [exportFrom, setExportFrom] = useState(getWeekStart(todayStr()));
   const [exportTo, setExportTo] = useState(getWeekStart(todayStr()));
-  const [exporting, setExporting] = useState(false);
+  const [cachedReports, setCachedReports] = useState<Record<string, WeeklyReportData>>({});
+  const [cacheLoading, setCacheLoading] = useState(false);
   const reqIdRef = useRef(0);
-
+  const cacheReqIdRef = useRef(0);
   const load = useCallback(async () => {
     const reqId = ++reqIdRef.current;
     setLoading(true);
@@ -193,6 +280,24 @@ export default function WeeklyReport() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    const reqId = ++cacheReqIdRef.current;
+    setCacheLoading(true);
+    const reports: Record<string, WeeklyReportData> = {};
+    let current = exportFrom;
+    (async () => {
+      while (current <= exportTo) {
+        try {
+          reports[current] = await weeklyReportApi.get(current);
+        } catch {}
+        current = addDays(current, 7);
+      }
+      if (reqId !== cacheReqIdRef.current) return;
+      setCachedReports(reports);
+      setCacheLoading(false);
+    })();
+  }, [exportFrom, exportTo]);
+
   const handlePrevWeek = () => setWeekStart(addDays(weekStart, -7));
   const handleNextWeek = () => setWeekStart(addDays(weekStart, 7));
   const handleThisWeek = () => setWeekStart(getWeekStart(todayStr()));
@@ -205,37 +310,11 @@ export default function WeeklyReport() {
   const allDays = report?.days || [];
   const totalTasks = allDays.reduce((sum, d) => sum + d.tasks.length + (d.standalone_groups?.length || 0), 0) || 0;
 
-  const handleExport = () => {
+  const handleExport = async () => {
     if (!report) return;
-    const md = reportToMarkdown(report, weekStart, weekEnd);
-    const ok = copyToClipboard(md);
+    const md = reportToMarkdown(report, weekStart, weekEnd, { overview: true, weekly: false, daily: true, summary: true });
+    const ok = await copyToClipboard(md);
     showToast(ok ? t('weeklyReport.copied') : t('weeklyReport.copyFailManual'), ok ? 'success' : 'error');
-  };
-
-  const exportMultiWeek = async (from: string, to: string) => {
-    setExporting(true);
-    try {
-      let allMd = '';
-      let current = from;
-      while (current <= to) {
-        const r = await weeklyReportApi.get(current);
-        if (r.days.some((d) => hasDayContent(d))) {
-          allMd += reportToMarkdown(r, current, addDays(current, 6)) + '\n---\n\n';
-        }
-        current = addDays(current, 7);
-      }
-      if (!allMd) {
-        showToast(t('weeklyReport.noRecordsRange'), 'error');
-      } else {
-        const ok = copyToClipboard(allMd.trimEnd());
-        showToast(ok ? t('weeklyReport.copied') : t('weeklyReport.copyFail'), ok ? 'success' : 'error');
-        setShowExport(false);
-      }
-    } catch {
-      showToast(t('weeklyReport.exportFail'), 'error');
-    } finally {
-      setExporting(false);
-    }
   };
 
   const handleExportRange = () => {
@@ -245,17 +324,74 @@ export default function WeeklyReport() {
       showToast(t('weeklyReport.startAfterEnd'), 'error');
       return;
     }
-    exportMultiWeek(fromWeek, toWeek);
-  };
-
-  const handleExportFromToThis = () => {
-    const fromWeek = getWeekStart(exportFrom);
-    const thisWeek = getWeekStart(todayStr());
-    if (fromWeek > thisWeek) {
-      showToast(t('weeklyReport.startAfterThis'), 'error');
+    if (cacheLoading) {
+      showToast(t('weeklyReport.exporting'), 'error');
       return;
     }
-    exportMultiWeek(fromWeek, thisWeek);
+    const reports: WeeklyReportData[] = [];
+    let current = fromWeek;
+    while (current <= toWeek) {
+      const r = cachedReports[current];
+      if (r) reports.push(r);
+      current = addDays(current, 7);
+    }
+
+    let perWeekMd = '';
+    const globalTagMap: Record<string, { count: number; done: number; total: number; items: { content: string; notes: string; done_subtasks: number; total_subtasks: number; is_in_progress_parent: boolean; week: string }[] }> = {};
+    let weekCount = 0;
+    for (const r of reports) {
+      const currentWeek = r.week_start;
+      if (r.days.some((d) => hasDayContent(d))) {
+        weekCount++;
+        for (const [tag, items] of Object.entries(r.summary_by_tag)) {
+          if (!globalTagMap[tag]) globalTagMap[tag] = { count: 0, done: 0, total: 0, items: [] };
+          globalTagMap[tag].count += items.length;
+          for (const item of items) {
+            globalTagMap[tag].done += item.done_subtasks;
+            globalTagMap[tag].total += item.total_subtasks;
+            globalTagMap[tag].items.push({
+              content: item.content,
+              notes: item.notes || '',
+              done_subtasks: item.done_subtasks,
+              total_subtasks: item.total_subtasks,
+              is_in_progress_parent: item.is_in_progress_parent,
+              week: currentWeek,
+            });
+          }
+        }
+        perWeekMd += reportToMarkdown(r, currentWeek, addDays(currentWeek, 6), { overview: false, weekly: false, daily: false, summary: false, weekTasks: true }, true) + '\n---\n\n';
+      }
+    }
+
+    let header = `# ${t('weeklyReport.reportTitle')} ${fromWeek} ~ ${addDays(toWeek, 6)}\n\n`;
+    header += `${t('weeklyReport.aiPreamble')}\n\n`;
+    let globalSummary = '';
+    if (Object.keys(globalTagMap).length > 0) {
+      globalSummary = `## ${t('weeklyReport.globalTagSummary') || 'Global Tag Summary'}\n\n`;
+      for (const [tag, data] of Object.entries(globalTagMap)) {
+        const tagLabel = tag === 'untagged' ? (t('common.noTags') || 'No Tags') : tag;
+        const tagPct = data.total > 0 ? `${data.done}/${data.total} (${(data.done / data.total * 100).toFixed(1)}%)` : '-';
+        globalSummary += `### ${tagLabel} (${data.count}) — ${tagPct}\n\n`;
+        globalSummary += `| ${t('weeklyReport.week') || 'Week'} | ${t('weeklyReport.task') || 'Task'} | ${t('weeklyReport.progress') || 'Progress'} | ${t('common.status') || 'Status'} | ${t('tasks.notes') || 'Notes'} |\n`;
+        globalSummary += `|------|------|------|------|------|\n`;
+        for (const item of data.items) {
+          const progress = item.total_subtasks > 0 ? `${item.done_subtasks}/${item.total_subtasks}` : '-';
+          const status = item.is_in_progress_parent ? t('common.inProgress') || 'In Progress' : t('common.completed') || 'Completed';
+          const notes = item.notes && item.notes.trim() ? item.notes.trim().replace(/\|/g, '/').replace(/\n/g, ' ') : '-';
+          globalSummary += `| ${item.week} ~ ${addDays(item.week, 6)} | ${item.content} | ${progress} | ${status} | ${notes} |\n`;
+        }
+        globalSummary += '\n';
+      }
+    }
+    const finalMd = header + globalSummary + perWeekMd;
+    if (weekCount === 0) {
+      showToast(t('weeklyReport.noRecordsRange'), 'error');
+      return;
+    }
+    copyToClipboard(finalMd.trimEnd()).then((ok) => {
+      showToast(ok ? t('weeklyReport.copied') : t('weeklyReport.copyFail'), ok ? 'success' : 'error');
+      if (ok) setShowExport(false);
+    });
   };
 
   return (
@@ -280,32 +416,24 @@ export default function WeeklyReport() {
               onClick={handleExport}
               className="text-left px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-sm hover:bg-gray-50 dark:hover:bg-gray-700 dark:text-gray-300 transition-base"
             >
-              {t('weeklyReport.exportCurrentWeek')} ({weekStart} ~ {weekEnd})
+              <div className="font-medium">{t('weeklyReport.exportCurrentWeek')} ({weekStart} ~ {weekEnd})</div>
+              <div className="text-xs text-gray-400 mt-0.5">{t('weeklyReport.singleWeekHint')}</div>
             </button>
             <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg flex-wrap">
-              <span className="text-sm text-gray-600 dark:text-gray-400">{t('weeklyReport.exportRange')}</span>
+              <div className="w-full mb-1">
+                <span className="text-sm text-gray-600 dark:text-gray-400">{t('weeklyReport.exportRange')}</span>
+                <span className="text-xs text-gray-400 ml-2">{t('weeklyReport.multiWeekHint')}</span>
+              </div>
               <DatePicker value={exportFrom} onChange={(v) => setExportFrom(getWeekStart(v))} />
               <span className="text-gray-400">~</span>
               <DatePicker value={exportTo} onChange={(v) => setExportTo(getWeekStart(v))} />
               <span className="text-xs text-gray-400">{exportFrom} ~ {addDays(exportTo, 6)}</span>
               <button
                 onClick={handleExportRange}
-                disabled={exporting}
+                disabled={cacheLoading}
                 className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50 ml-auto transition-base"
               >
-                {exporting ? t('weeklyReport.exporting') : t('weeklyReport.export')}
-              </button>
-            </div>
-            <div className="flex items-center gap-2 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg flex-wrap">
-              <span className="text-sm text-gray-600 dark:text-gray-400">{t('weeklyReport.exportFromToThis')}</span>
-              <DatePicker value={exportFrom} onChange={(v) => setExportFrom(getWeekStart(v))} />
-              <span className="text-xs text-gray-400">{exportFrom} ~ {addDays(getWeekStart(todayStr()), 6)}</span>
-              <button
-                onClick={handleExportFromToThis}
-                disabled={exporting}
-                className="bg-blue-600 text-white px-3 py-1 rounded-lg text-sm hover:bg-blue-700 disabled:opacity-50 ml-auto transition-base"
-              >
-                {exporting ? t('weeklyReport.exporting') : t('weeklyReport.export')}
+                {cacheLoading ? t('weeklyReport.exporting') : t('weeklyReport.export')}
               </button>
             </div>
           </div>
@@ -349,6 +477,12 @@ export default function WeeklyReport() {
                           )}
                           {task.tags && <TagBadge tags={task.tags} />}
                         </div>
+                        {task.notes && task.notes.trim() && (
+                          <div className="mt-2 bg-gray-100 dark:bg-gray-700/40 rounded-lg px-2.5 py-1.5 text-xs text-gray-600 dark:text-gray-300 whitespace-pre-wrap flex gap-1.5">
+                            <span className="shrink-0">📝</span>
+                            <span className="italic">{task.notes.trim()}</span>
+                          </div>
+                        )}
                         {task.subtask_tree && task.subtask_tree.length > 0 && (
                           <div className="mt-2 ml-3 pl-3 border-l border-gray-200 dark:border-gray-600 space-y-0.5">
                             {renderSubtaskTree(task.subtask_tree)}

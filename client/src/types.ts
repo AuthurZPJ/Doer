@@ -2,7 +2,9 @@ export interface Task {
   id: number;
   content: string;
   tags: string;
+  notes: string;
   status: 'in_progress' | 'completed';
+  sort_order: number;
   due_date: string | null;
   completed_at: string | null;
   created_at: string;
@@ -49,6 +51,7 @@ export interface Subtask {
   task_id: number;
   parent_subtask_id: number | null;
   content: string;
+  notes: string;
   status: 'pending' | 'done';
   sort_order: number;
   created_at: string;
@@ -87,7 +90,7 @@ export interface WeeklyReport {
   week_start: string;
   week_end: string;
   days: WeeklyReportDay[];
-  summary_by_tag: Record<string, { content: string; done_subtasks: number; total_subtasks: number; subtask_tree: SubtaskNode[]; is_in_progress_parent: boolean }[]>;
+  summary_by_tag: Record<string, { content: string; notes: string; done_subtasks: number; total_subtasks: number; subtask_tree: SubtaskNode[]; is_in_progress_parent: boolean }[]>;
   subtask_stats: { total_done: number; total_subtasks: number };
 }
 

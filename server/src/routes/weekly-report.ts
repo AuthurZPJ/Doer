@@ -21,6 +21,7 @@ function addDays(dateStr: string, days: number): string {
 interface SubtaskNode {
   id: number;
   content: string;
+  notes: string;
   status: string;
   parent_subtask_id: number | null;
   children: SubtaskNode[];
@@ -33,6 +34,7 @@ function buildSubtaskTree(subtasks: any[]): SubtaskNode[] {
     byId.set(s.id, {
       id: s.id,
       content: s.content,
+      notes: s.notes || '',
       status: s.status,
       parent_subtask_id: s.parent_subtask_id ?? null,
       children: [],
@@ -89,7 +91,7 @@ router.get('/', (req, res) => {
   const allStandaloneTaskIds = new Set<number>();
   for (const date of weekDates) {
     const rows = db.prepare(
-      `SELECT s.*, t.tags as parent_tags, t.content as parent_content
+      `SELECT s.*, t.tags as parent_tags, t.content as parent_content, t.notes as parent_notes
        FROM subtasks s
        JOIN tasks t ON s.task_id = t.id
        WHERE s.status = 'done' AND date(s.done_at, 'localtime') = ? AND t.status != 'completed'
@@ -128,6 +130,7 @@ router.get('/', (req, res) => {
 
       summaryItems.push({
         content: task.content,
+        notes: task.notes || '',
         done_subtasks: doneCount,
         total_subtasks: subtasks.length,
         subtask_tree: tree,
@@ -151,6 +154,7 @@ router.get('/', (req, res) => {
           parent_task_id: row.task_id,
           parent_task_content: row.parent_content,
           parent_tags: row.parent_tags,
+          parent_notes: row.parent_notes || '',
           total_subtasks: parentCountMap.get(row.task_id) || 0,
           rows: [],
         });
@@ -170,6 +174,7 @@ router.get('/', (req, res) => {
 
       summaryItems.push({
         content: g.parent_task_content,
+        notes: g.parent_notes,
         done_subtasks: doneCount,
         total_subtasks: g.total_subtasks,
         subtask_tree: tree,
@@ -193,11 +198,12 @@ router.get('/', (req, res) => {
   const summaryByTag: Record<string, any[]> = {};
   for (const item of summaryItems) {
     const tags = String(item.tags || '').split(',').map(t => t.trim()).filter(Boolean);
-    const keys = tags.length === 0 ? ['未分类'] : tags;
+    const keys = tags.length === 0 ? ['untagged'] : tags;
     for (const key of keys) {
       if (!summaryByTag[key]) summaryByTag[key] = [];
       summaryByTag[key].push({
         content: item.content,
+        notes: item.notes,
         done_subtasks: item.done_subtasks,
         total_subtasks: item.total_subtasks,
         subtask_tree: item.subtask_tree,
