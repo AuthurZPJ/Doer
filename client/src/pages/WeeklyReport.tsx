@@ -29,6 +29,7 @@ function getWeekdayNames() {
 interface SubtaskNode {
   id: number;
   content: string;
+  status: string;
   children?: SubtaskNode[];
 }
 
@@ -36,7 +37,7 @@ function renderSubtaskTree(nodes: SubtaskNode[]) {
   return nodes.map(node => (
     <div key={node.id}>
       <div className="flex items-center gap-2 py-0.5">
-        <span className="text-xs text-gray-500 dark:text-gray-400">{node.content}</span>
+        <span className={`text-xs ${node.status === 'done' ? 'text-gray-400 dark:text-gray-500 line-through' : 'text-gray-500 dark:text-gray-400'}`}>{node.content}</span>
       </div>
       {node.children && node.children.length > 0 && (
         <div className="ml-3 pl-3 border-l border-gray-200 dark:border-gray-600 space-y-0.5">
@@ -51,12 +52,18 @@ function flattenToMarkdown(nodes: SubtaskNode[], depth: number): string {
   const indent = '  '.repeat(depth);
   let out = '';
   for (const node of nodes) {
-    out += `${indent}- ${node.content}\n`;
+    const checked = node.status === 'done' ? '[x]' : '[ ]';
+    out += `${indent}- ${checked} ${node.content}\n`;
     if (node.children && node.children.length > 0) {
       out += flattenToMarkdown(node.children, depth + 1);
     }
   }
   return out;
+}
+
+function pct(done: number, total: number): string {
+  if (total === 0) return '';
+  return `(${(done / total * 100).toFixed(1)}%)`;
 }
 
 function copyToClipboard(text: string): boolean {
@@ -90,35 +97,67 @@ function TagBadge({ tags }: { tags: string }) {
 function reportToMarkdown(r: WeeklyReportData, start: string, end: string): string {
   const weekdayNames = getWeekdayNames();
   const hasDayContent = (day: WeeklyReportDay) => day.tasks.length > 0 || (day.standalone_groups?.length || 0) > 0;
+
+  const activeDays = r.days.filter(hasDayContent).length;
+  const totalTasks = r.days.reduce((sum, d) => sum + d.tasks.length + (d.standalone_groups?.length || 0), 0);
+  const tagNames = Object.keys(r.summary_by_tag);
+  const subtaskPct = r.subtask_stats && r.subtask_stats.total_subtasks > 0
+    ? `${r.subtask_stats.total_done}/${r.subtask_stats.total_subtasks} (${(r.subtask_stats.total_done / r.subtask_stats.total_subtasks * 100).toFixed(1)}%)`
+    : `${r.subtask_stats?.total_done || 0}/${r.subtask_stats?.total_subtasks || 0}`;
+
   let md = `# ${i18n.t('weeklyReport.reportTitle')} ${start} ~ ${end}\n\n`;
-  if (r.subtask_stats) {
-    md += `> ${i18n.t('weeklyReport.subtaskStats')}: ${r.subtask_stats.total_done}/${r.subtask_stats.total_subtasks} ${i18n.t('weeklyReport.completedLabel')}\n\n`;
-  }
+  md += `## ${i18n.t('weeklyReport.overview') || 'Overview'}\n\n`;
+  md += `- ${i18n.t('weeklyReport.dateRange') || 'Date Range'}: ${start} ~ ${end}\n`;
+  md += `- ${i18n.t('weeklyReport.completedTasks') || 'Completed Tasks'}: ${totalTasks}\n`;
+  md += `- ${i18n.t('weeklyReport.activeDays') || 'Active Days'}: ${activeDays}/7\n`;
+  md += `- ${i18n.t('weeklyReport.tagsInvolved') || 'Tags'}: ${tagNames.length > 0 ? tagNames.join(', ') : '-'}\n`;
+  md += `- ${i18n.t('weeklyReport.subtaskProgress') || 'Subtask Progress'}: ${subtaskPct}\n\n`;
+
   md += `## ${i18n.t('weeklyReport.dailyComplete')}\n\n`;
   for (const day of r.days) {
     if (!hasDayContent(day)) continue;
     const weekday = weekdayNames[parseLocalDate(day.date).getDay() === 0 ? 6 : parseLocalDate(day.date).getDay() - 1];
     md += `### ${day.date} ${weekday}\n`;
-    for (const task of day.tasks) {
-      const countStr = task.total_subtasks > 0 ? ` (${task.done_subtasks}/${task.total_subtasks})` : '';
-      md += `- ${task.content}${countStr}${task.tags ? ` [${task.tags}]` : ''}\n`;
-      md += flattenToMarkdown(task.subtask_tree || [], 1);
+
+    if (day.tasks.length > 0) {
+      md += `\n**${i18n.t('weeklyReport.completedTasks') || 'Completed Tasks'}**\n\n`;
+      let idx = 1;
+      for (const task of day.tasks) {
+        const progress = task.total_subtasks > 0 ? ` \`${i18n.t('weeklyReport.progress') || 'Progress'}: ${task.done_subtasks}/${task.total_subtasks} ${pct(task.done_subtasks, task.total_subtasks)}\`` : '';
+        const tags = task.tags ? ` \`${i18n.t('common.tags') || 'Tags'}: ${task.tags}\`` : '';
+        md += `${idx}. ${task.content}${tags}${progress}\n`;
+        if (task.subtask_tree && task.subtask_tree.length > 0) {
+          md += flattenToMarkdown(task.subtask_tree, 1);
+        }
+        idx++;
+      }
     }
-    for (const g of (day.standalone_groups || [])) {
-      const countStr = g.total_subtasks > 0 ? ` (${g.done_subtasks}/${g.total_subtasks})` : '';
-      md += `- ${g.parent_task_content} (${i18n.t('weeklyReport.standaloneGroup')})${countStr}${g.parent_tags ? ` [${g.parent_tags}]` : ''}\n`;
-      md += flattenToMarkdown(g.subtask_tree || [], 1);
+
+    if ((day.standalone_groups?.length || 0) > 0) {
+      md += `\n**${i18n.t('weeklyReport.inProgressSubtasks') || 'In-Progress Task Subtasks'}**\n\n`;
+      let idx = 1;
+      for (const g of (day.standalone_groups || [])) {
+        const progress = g.total_subtasks > 0 ? ` \`${i18n.t('weeklyReport.progress') || 'Progress'}: ${g.done_subtasks}/${g.total_subtasks} ${pct(g.done_subtasks, g.total_subtasks)}\`` : '';
+        const tags = g.parent_tags ? ` \`${i18n.t('common.tags') || 'Tags'}: ${g.parent_tags}\`` : '';
+        md += `${idx}. ${g.parent_task_content}${tags}${progress}\n`;
+        if (g.subtask_tree && g.subtask_tree.length > 0) {
+          md += flattenToMarkdown(g.subtask_tree, 1);
+        }
+        idx++;
+      }
     }
     md += '\n';
   }
+
   md += `## ${i18n.t('weeklyReport.summaryByTag')}\n\n`;
   for (const [tag, items] of Object.entries(r.summary_by_tag)) {
-    md += `### ${tag}\n`;
+    md += `### ${tag} (${items.length})\n\n`;
+    md += `| ${i18n.t('weeklyReport.task') || 'Task'} | ${i18n.t('weeklyReport.progress') || 'Progress'} | ${i18n.t('common.status') || 'Status'} |\n`;
+    md += `|------|------|------|\n`;
     for (const item of items) {
-      const countStr = item.total_subtasks > 0 ? ` (${item.done_subtasks}/${item.total_subtasks})` : '';
-      const label = item.is_in_progress_parent ? ` (${i18n.t('weeklyReport.standaloneGroup')})` : '';
-      md += `- ${item.content}${countStr}${label}\n`;
-      md += flattenToMarkdown(item.subtask_tree || [], 1);
+      const progress = item.total_subtasks > 0 ? `${item.done_subtasks}/${item.total_subtasks} ${pct(item.done_subtasks, item.total_subtasks)}` : '-';
+      const status = item.is_in_progress_parent ? i18n.t('common.inProgress') || 'In Progress' : i18n.t('common.completed') || 'Completed';
+      md += `| ${item.content} | ${progress} | ${status} |\n`;
     }
     md += '\n';
   }

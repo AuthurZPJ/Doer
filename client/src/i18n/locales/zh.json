@@ -39,6 +39,8 @@
     "operateFail": "操作失败",
     "complete": "完成",
     "completed": "已完成",
+    "inProgress": "进行中",
+    "tags": "标签",
     "reopen": "重新打开",
     "reopened": "已重新打开",
     "optionalTags": "可选标签",
@@ -133,7 +135,16 @@
     "noRecordsRange": "该区间暂无记录",
     "exportFail": "导出失败",
     "reportTitle": "周报",
-    "subtaskStats": "子任务"
+    "subtaskStats": "子任务",
+    "overview": "概况",
+    "dateRange": "日期范围",
+    "completedTasks": "已完成任务",
+    "activeDays": "活跃天数",
+    "tagsInvolved": "涉及标签",
+    "subtaskProgress": "子任务进度",
+    "progress": "进度",
+    "task": "任务",
+    "inProgressSubtasks": "进行中任务的已完成子项"
   },
   "search": {
     "title": "全局搜索",

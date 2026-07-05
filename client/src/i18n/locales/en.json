@@ -39,6 +39,8 @@
     "operateFail": "Operation failed",
     "complete": "Complete",
     "completed": "Completed",
+    "inProgress": "In Progress",
+    "tags": "Tags",
     "reopen": "Reopen",
     "reopened": "Reopened",
     "optionalTags": "Optional tags",
@@ -133,7 +135,16 @@
     "noRecordsRange": "No records in this range",
     "exportFail": "Export failed",
     "reportTitle": "Weekly Report",
-    "subtaskStats": "Subtasks"
+    "subtaskStats": "Subtasks",
+    "overview": "Overview",
+    "dateRange": "Date Range",
+    "completedTasks": "Completed Tasks",
+    "activeDays": "Active Days",
+    "tagsInvolved": "Tags",
+    "subtaskProgress": "Subtask Progress",
+    "progress": "Progress",
+    "task": "Task",
+    "inProgressSubtasks": "In-Progress Task Subtasks"
   },
   "search": {
     "title": "Global Search",
