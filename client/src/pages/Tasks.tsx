@@ -192,14 +192,15 @@ export default function Tasks() {
       setInProgress(inProgressTasks);
       setCompleted(completedTasks);
 
-      const subtaskEntries = await Promise.all(
-        [...inProgressTasks, ...completedTasks].map((task) => subtasksApi.list(task.id))
-      );
+      const allTasks = [...inProgressTasks, ...completedTasks];
+      const batchMap = allTasks.length > 0
+        ? await subtasksApi.batchList(allTasks.map((task) => task.id))
+        : {};
       if (reqId !== reqIdRef.current) return;
       const map: Record<number, Subtask[]> = {};
-      [...inProgressTasks, ...completedTasks].forEach((task, i) => {
-        map[task.id] = subtaskEntries[i];
-      });
+      for (const task of allTasks) {
+        map[task.id] = batchMap[task.id] || [];
+      }
       setSubtaskMap(map);
     } catch {
       if (reqId !== reqIdRef.current) return;

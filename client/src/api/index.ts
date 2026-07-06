@@ -69,6 +69,7 @@ export const backupApi = {
 
 export const subtasksApi = {
   list: (taskId: number): Promise<Subtask[]> => api.get(`/tasks/${taskId}/subtasks`).then(r => r.data),
+  batchList: (taskIds: number[]): Promise<Record<number, Subtask[]>> => api.get('/subtasks', { params: { task_ids: taskIds.join(',') } }).then(r => r.data),
   create: (taskId: number, content: string, parentSubtaskId?: number | null): Promise<{ id: number }> => api.post(`/tasks/${taskId}/subtasks`, { content, parent_subtask_id: parentSubtaskId ?? null }).then(r => r.data),
   update: (taskId: number, id: number, data: Partial<Pick<Subtask, 'content' | 'notes' | 'status' | 'sort_order' | 'parent_subtask_id'>>): Promise<{ ok: boolean }> => api.put(`/tasks/${taskId}/subtasks/${id}`, data).then(r => r.data),
   reorder: (taskId: number, items: { id: number; sort_order: number; parent_subtask_id: number | null }[]): Promise<{ ok: boolean }> => api.patch(`/tasks/${taskId}/subtasks/reorder`, { items }).then(r => r.data),

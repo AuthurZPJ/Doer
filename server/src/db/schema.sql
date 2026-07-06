@@ -55,3 +55,13 @@ CREATE TABLE IF NOT EXISTS subtasks (
   created_at TEXT NOT NULL,
   done_at TEXT
 );
+
+CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status);
+CREATE INDEX IF NOT EXISTS idx_tasks_completed_at ON tasks(completed_at);
+CREATE INDEX IF NOT EXISTS idx_todos_status ON todos(status);
+CREATE INDEX IF NOT EXISTS idx_todos_due_date ON todos(due_date);
+CREATE INDEX IF NOT EXISTS idx_meetings_meeting_date ON meetings(meeting_date);
+CREATE INDEX IF NOT EXISTS idx_subtasks_task_id ON subtasks(task_id);
+CREATE INDEX IF NOT EXISTS idx_subtasks_parent_subtask_id ON subtasks(parent_subtask_id);
+CREATE INDEX IF NOT EXISTS idx_subtasks_status ON subtasks(status);
+CREATE INDEX IF NOT EXISTS idx_subtasks_done_at ON subtasks(done_at);

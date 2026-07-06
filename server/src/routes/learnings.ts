@@ -5,7 +5,7 @@ const router = Router();
 
 router.get('/', (_req, res) => {
   const rows = getDb().prepare(
-    'SELECT * FROM learnings ORDER BY created_at DESC'
+    'SELECT * FROM learnings ORDER BY created_at DESC LIMIT 500'
   ).all();
   res.json(rows);
 });

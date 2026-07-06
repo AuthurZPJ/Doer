@@ -15,6 +15,9 @@ export function initDb(): Database.Database {
   db = new Database(DB_PATH);
   db.pragma('journal_mode = WAL');
   db.pragma('foreign_keys = ON');
+  db.pragma('synchronous = NORMAL');
+  db.pragma('temp_store = MEMORY');
+  db.pragma('cache_size = -20000');
   const schema = readFileSync(SCHEMA_PATH, 'utf-8');
   db.exec(schema);
   migrate(db);
@@ -102,7 +105,8 @@ export function saveTags(tagsStr: string): void {
   const tags = tagsStr.split(',').map(t => t.trim()).filter(Boolean);
   if (tags.length === 0) return;
   const stmt = getDb().prepare('INSERT OR IGNORE INTO tags (name) VALUES (?)');
-  for (const tag of tags) {
-    stmt.run(tag);
-  }
+  const insertMany = getDb().transaction((ts: string[]) => {
+    for (const t of ts) stmt.run(t);
+  });
+  insertMany(tags);
 }

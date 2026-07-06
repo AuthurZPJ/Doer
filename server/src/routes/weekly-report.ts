@@ -66,13 +66,14 @@ router.get('/', (req, res) => {
   for (let i = 0; i < 7; i++) weekDates.push(addDays(weekStart, i));
 
   const completedTasksByDate = new Map<string, any[]>();
+  for (const d of weekDates) completedTasksByDate.set(d, []);
   const allCompletedTaskIds: number[] = [];
-  for (const date of weekDates) {
-    const tasks = db.prepare(
-      "SELECT * FROM tasks WHERE status = 'completed' AND completed_at = ? ORDER BY created_at ASC"
-    ).all(date) as any[];
-    completedTasksByDate.set(date, tasks);
-    for (const t of tasks) allCompletedTaskIds.push(t.id);
+  const allCompleted = db.prepare(
+    "SELECT * FROM tasks WHERE status = 'completed' AND completed_at BETWEEN ? AND ? ORDER BY created_at ASC"
+  ).all(weekStart, weekEnd) as any[];
+  for (const t of allCompleted) {
+    if (completedTasksByDate.has(t.completed_at)) completedTasksByDate.get(t.completed_at)!.push(t);
+    allCompletedTaskIds.push(t.id);
   }
 
   const subtaskMap = new Map<number, any[]>();
@@ -88,17 +89,21 @@ router.get('/', (req, res) => {
   }
 
   const standaloneByDate = new Map<string, any[]>();
+  for (const d of weekDates) standaloneByDate.set(d, []);
   const allStandaloneTaskIds = new Set<number>();
-  for (const date of weekDates) {
-    const rows = db.prepare(
-      `SELECT s.*, t.tags as parent_tags, t.content as parent_content, t.notes as parent_notes
-       FROM subtasks s
-       JOIN tasks t ON s.task_id = t.id
-       WHERE s.status = 'done' AND date(s.done_at, 'localtime') = ? AND t.status != 'completed'
-       ORDER BY s.done_at ASC`
-    ).all(date) as any[];
-    standaloneByDate.set(date, rows);
-    for (const r of rows) allStandaloneTaskIds.add(r.task_id);
+  const ph7 = placeholders(7);
+  const allStandalone = db.prepare(
+    `SELECT s.*, t.tags as parent_tags, t.content as parent_content, t.notes as parent_notes,
+            date(s.done_at, 'localtime') as local_date
+     FROM subtasks s
+     JOIN tasks t ON s.task_id = t.id
+     WHERE s.status = 'done' AND t.status != 'completed'
+       AND date(s.done_at, 'localtime') IN (${ph7})
+     ORDER BY s.done_at ASC`
+  ).all(...weekDates) as any[];
+  for (const row of allStandalone) {
+    if (standaloneByDate.has(row.local_date)) standaloneByDate.get(row.local_date)!.push(row);
+    allStandaloneTaskIds.add(row.task_id);
   }
 
   const parentCountMap = new Map<number, number>();

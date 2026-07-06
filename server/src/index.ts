@@ -1,6 +1,6 @@
 import express from 'express';
 import cors from 'cors';
-import { initDb, closeDb } from './db/index.js';
+import { initDb, closeDb, getDb } from './db/index.js';
 import tasksRouter from './routes/tasks.js';
 import todosRouter from './routes/todos.js';
 import meetingsRouter from './routes/meetings.js';
@@ -30,6 +30,21 @@ app.get('/api/health', (_req, res) => {
 
 app.use('/api/tasks', tasksRouter);
 app.use('/api/tasks/:taskId/subtasks', subtasksRouter);
+
+app.get('/api/subtasks', (req, res) => {
+  const ids = String(req.query.task_ids || '').split(',').map(Number).filter((n) => Number.isFinite(n) && n > 0);
+  if (ids.length === 0) return res.json({});
+  const ph = ids.map(() => '?').join(',');
+  const rows = getDb().prepare(
+    `SELECT * FROM subtasks WHERE task_id IN (${ph}) ORDER BY sort_order ASC, created_at ASC`
+  ).all(...ids) as any[];
+  const map: Record<number, any[]> = {};
+  for (const r of rows) {
+    if (!map[r.task_id]) map[r.task_id] = [];
+    map[r.task_id].push(r);
+  }
+  res.json(map);
+});
 app.use('/api/todos', todosRouter);
 app.use('/api/meetings', meetingsRouter);
 app.use('/api/learnings', learningsRouter);
@@ -57,5 +72,6 @@ if (!process.env.VITEST) {
 
   process.on('SIGTERM', shutdown);
   process.on('SIGINT', shutdown);
+  process.on('message', (msg: unknown) => { if (msg === 'shutdown') shutdown(); });
   process.on('beforeExit', () => { closeDb(); });
 }

@@ -13,7 +13,7 @@ router.get('/', (req, res) => {
     res.json(rows);
   } else {
     const rows = getDb().prepare(
-      'SELECT * FROM meetings ORDER BY meeting_date DESC, created_at DESC'
+      'SELECT * FROM meetings ORDER BY meeting_date DESC, created_at DESC LIMIT 500'
     ).all();
     res.json(rows);
   }

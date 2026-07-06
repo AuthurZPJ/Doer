@@ -21,7 +21,7 @@ router.get('/', (req, res) => {
     res.json(rows);
   } else {
     const rows = getDb().prepare(
-      "SELECT * FROM tasks WHERE status = 'completed' ORDER BY completed_at DESC"
+      "SELECT * FROM tasks WHERE status = 'completed' ORDER BY completed_at DESC LIMIT 500"
     ).all();
     res.json(rows);
   }

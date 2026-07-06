@@ -2,10 +2,30 @@ const { app, BrowserWindow, Menu, dialog, session } = require('electron');
 const { fork } = require('child_process');
 const path = require('path');
 const http = require('http');
+const fs = require('fs');
 
 let mainWindow = null;
 let serverProcess = null;
 let isQuitting = false;
+let logStream = null;
+
+function getLogStream() {
+  if (logStream) return logStream;
+  const logDir = path.join(app.getPath('userData'), 'logs');
+  fs.mkdirSync(logDir, { recursive: true });
+  logStream = fs.createWriteStream(path.join(logDir, 'server.log'), { flags: 'a' });
+  return logStream;
+}
+
+function logServerLine(level, data) {
+  const line = `[server] ${data.toString().trim()}`;
+  if (process.env.DOER_DEV) {
+    if (level === 'error') console.error(line);
+    else console.log(line);
+    return;
+  }
+  try { getLogStream().write(`${new Date().toISOString()} ${line}\n`); } catch {}
+}
 
 function startServer() {
   if (serverProcess) return;
@@ -22,37 +42,43 @@ function startServer() {
     windowsHide: true,
   });
 
-  serverProcess.stdout.on('data', (data) => console.log(`[server] ${data.toString().trim()}`));
-  serverProcess.stderr.on('data', (data) => console.error(`[server] ${data.toString().trim()}`));
-  serverProcess.on('error', (err) => console.error(`[server] fork error: ${err.message}`));
+  serverProcess.stdout.on('data', (data) => logServerLine('info', data));
+  serverProcess.stderr.on('data', (data) => logServerLine('error', data));
+  serverProcess.on('error', (err) => logServerLine('error', `fork error: ${err.message}`));
   serverProcess.on('exit', () => { serverProcess = null; });
 }
 
 function stopServer() {
   return new Promise((resolve) => {
     if (!serverProcess) { resolve(); return; }
-    serverProcess.on('exit', () => resolve());
-    serverProcess.kill('SIGTERM');
+    let settled = false;
+    const done = () => { if (!settled) { settled = true; resolve(); } };
+    serverProcess.on('exit', done);
+    // Prefer IPC graceful shutdown (cross-platform); Windows maps SIGTERM to TerminateProcess.
+    try { serverProcess.send('shutdown'); } catch {}
     setTimeout(() => {
-      if (serverProcess) {
-        try { serverProcess.kill('SIGKILL'); } catch {}
-      }
-      resolve();
+      if (serverProcess) { try { serverProcess.kill(); } catch {} }
+      setTimeout(done, 1000);
     }, 5000);
   });
 }
 
-function waitForServer(callback, retries = 30) {
+function waitForServer(callback, retries = 30, delay = 150) {
   const req = http.get('http://localhost:3001/api/health', (res) => {
+    res.resume();
     if (res.statusCode === 200) { callback(true); return; }
-    if (retries > 0) setTimeout(() => waitForServer(callback, retries - 1), 500);
+    if (retries > 0) setTimeout(() => waitForServer(callback, retries - 1, Math.min(delay * 1.5, 800)), delay);
     else callback(false);
   });
   req.on('error', () => {
-    if (retries > 0) setTimeout(() => waitForServer(callback, retries - 1), 500);
+    if (retries > 0) setTimeout(() => waitForServer(callback, retries - 1, Math.min(delay * 1.5, 800)), delay);
     else callback(false);
   });
-  req.setTimeout(2000, () => { req.destroy(); if (retries > 0) setTimeout(() => waitForServer(callback, retries - 1), 500); else callback(false); });
+  req.setTimeout(2000, () => {
+    req.destroy();
+    if (retries > 0) setTimeout(() => waitForServer(callback, retries - 1, Math.min(delay * 1.5, 800)), delay);
+    else callback(false);
+  });
 }
 
 function createWindow() {
@@ -139,6 +165,7 @@ if (!gotLock) {
       isQuitting = true;
       event.preventDefault();
       await stopServer();
+      if (logStream) { try { logStream.end(); } catch {} }
       app.quit();
     }
   });
